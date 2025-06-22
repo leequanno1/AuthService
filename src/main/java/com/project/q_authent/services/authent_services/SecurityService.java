@@ -27,7 +27,7 @@ public class SecurityService {
             throw new BadException(ErrorCode.WRONG_PASSWORD);
         }
 
-        if (!account.isActive()) {
+        if (!account.getActive()) {
             throw new BadException(ErrorCode.ACCOUNT_UNACTIVATED);
         }
 
