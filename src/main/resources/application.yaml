@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: q_authent
+  datasource:
+    url: jdbc:mysql://localhost:3306/q_authent
+    username: ${MYSQL_DB_USERNAME}
+    password: ${MYSQL_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/q_auth_mongo
+    rest:
+      base-path: /api
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+
+springdoc:
+  show-actuator: false
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+  writer-with-default-pretty-printer: true
+  override-with-generic-response: false
+  packages-to-scan: com.project.q_authent.controllers
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+custom:
+  access-key: ${ACCESS_KEY}
+  refresh-key: ${REFRESH_KEY}
