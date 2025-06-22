@@ -10,6 +10,7 @@ import java.sql.Timestamp;
         @Index(name = "user_pools_index_1", columnList = "account_id")
 })
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserPool {
@@ -28,6 +29,7 @@ public class UserPool {
     @Column(name = "authorize_fields", nullable = false, length = 1000)
     private String authorizeFields;
 
+    // raw key
     @Column(name = "pool_key", nullable = false)
     private String poolKey;
 
@@ -43,11 +45,13 @@ public class UserPool {
     /**
      * encode before storage
      * decode when sign
-     * AES-GCM algorithm check GPT late
+     * AES-GCM algorithm check GPT later
      */
+    // encrypt key
     @Column(name = "private_access_key")
     private String privateAccessKey;
 
+    // encrypt key
     @Column(name = "private_refresh_key")
     private String privateRefreshKey;
 

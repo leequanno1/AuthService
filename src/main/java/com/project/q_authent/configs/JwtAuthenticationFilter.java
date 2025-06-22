@@ -1,11 +1,11 @@
 package com.project.q_authent.configs;
+import com.project.q_authent.constances.PublicEndpoint;
 import com.project.q_authent.repositories.AccountRepository;
 import com.project.q_authent.services.authent_services.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import org.springframework.util.AntPathMatcher;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -23,6 +24,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,13 +38,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String accountId;
 
         String path = request.getServletPath();
-        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui")) {
-            filterChain.doFilter(request, response);
-            return;
+        for (String publicPattern : PublicEndpoint.endpoints) {
+            if (pathMatcher.match(publicPattern, path)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
         }
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+            response.setContentType("application/json");
+            response.getWriter().write("{\"code\": \"403\",\"message\": \"Missing or invalid Authorization header\"}");
             return;
         }
 
@@ -49,7 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             accountId = jwtService.extractAccountId(jwt, false);
         } catch (Exception e) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+            response.setContentType("application/json");
+            response.getWriter().write("{\"code\": \"403\",\"message\": \"Invalid or expired token\"}");
             return;
         }
 
@@ -58,12 +67,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (user != null && jwtService.isTokenValid(jwt, user, false)) {
                 var authToken = new UsernamePasswordAuthenticationToken(
-                        user, null, null // hoặc authorities nếu bạn có
+                        user.getAccountId(), null, null
                 );
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"code\": \"403\",\"message\": \"Invalid token or user not found\"}");
+                return;
             }
         }
 
