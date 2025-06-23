@@ -15,7 +15,11 @@ public enum ErrorCode {
     EMAIL_USED(1004, "Email is already used", HttpStatus.BAD_REQUEST),
     ACCOUNT_UNACTIVATED(1005, "Account unactivated", HttpStatus.UNAUTHORIZED),
     INVALID_TOKEN(1006, "Invalid token", HttpStatus.UNAUTHORIZED),
-    OLD_REFRESH_TOKEN(1007, "Refresh token have been renew", HttpStatus.UNAUTHORIZED);
+    OLD_REFRESH_TOKEN(1007, "Refresh token have been renew", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(1008, "Unauthorized", HttpStatus.UNAUTHORIZED),
+    // Code 2*** : UserPool
+    FIELD_NEEDED(2000, "Email verify cant turn on", HttpStatus.BAD_REQUEST),
+    POOL_NOT_FOUND(2001, "User pool is not found", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

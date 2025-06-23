@@ -13,4 +13,8 @@ public class UserPoolRequest {
     private String authorizeFields;
 
     private String poolName;
+
+    private Boolean emailVerify;
+
+    private String roleLevels;
 }

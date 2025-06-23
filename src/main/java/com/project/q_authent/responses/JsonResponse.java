@@ -37,4 +37,9 @@ public class JsonResponse<T> {
     public static <T> JsonResponse<T> error(ErrorCode errorCode) {
         return new JsonResponse<>(errorCode.getCode(), errorCode.getMessage(), null);
     }
+
+    public static <T> JsonResponse<T> error(Exception errorCode) {
+        return new JsonResponse<>(500, errorCode.getMessage(), null);
+    }
+
 }

@@ -16,7 +16,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
     ResponseEntity<JsonResponse<String>> handleException(Exception e) {
-        return ResponseEntity.status(ErrorCode.UNCATEGORIZED_EXCEPTION.getStatusCode()).body(JsonResponse.error(ErrorCode.UNCATEGORIZED_EXCEPTION));
-
+        return ResponseEntity.status(ErrorCode.UNCATEGORIZED_EXCEPTION.getStatusCode()).body(JsonResponse.error(e));
     }
 }

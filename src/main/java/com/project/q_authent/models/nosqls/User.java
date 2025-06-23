@@ -33,6 +33,7 @@ public class User {
     private String backgroundImg;
     private String displayName;
     private Boolean gender;
+    private String roleLevel;
     @Builder.Default
     private Boolean isValidated = false;
     private String poolId;

@@ -48,13 +48,19 @@ public class UserPool {
      * AES-GCM algorithm check GPT later
      */
     // encrypt key
-    @Column(name = "private_access_key")
+    @Column(name = "private_access_key", length = 660)
     private String privateAccessKey;
 
     // encrypt key
-    @Column(name = "private_refresh_key")
+    @Column(name = "private_refresh_key", length = 660)
     private String privateRefreshKey;
 
     @Column(name = "pool_name")
     private String poolName;
+
+    @Column(name = "email_verify")
+    private Boolean emailVerify = false;
+
+    @Column(name = "role_levels")
+    private String roleLevels;
 }
