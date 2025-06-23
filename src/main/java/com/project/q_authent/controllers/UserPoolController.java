@@ -36,6 +36,11 @@ public class UserPoolController {
         return JsonResponse.success(userPoolService.createNewUserPool(request));
     }
 
+    @PostMapping("/update")
+    public JsonResponse<String> updateUserPool(@RequestBody UserPoolRequest request) {
+        return JsonResponse.success(userPoolService.updateUserPool(request));
+    }
+
     /**
      * Set del_flag for user that delete
      * @param poolId user pool id

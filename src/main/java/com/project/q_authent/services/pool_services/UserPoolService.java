@@ -27,8 +27,7 @@ public class UserPoolService {
     private final AESGCMUtils aesgcmUtils;
 
     public String createNewUserPool(UserPoolRequest request) throws Exception {
-        String userId = SecurityUtils.getCurrentUserId();
-        assert userId != null;
+        String userId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
         Account account = accountRepository.findById(userId).orElseThrow(
                 () -> new BadException(ErrorCode.USER_NOT_FOUND)
         );
@@ -45,6 +44,8 @@ public class UserPoolService {
                 .createdAt(new Timestamp(System.currentTimeMillis()))
                 .updatedAt(new Timestamp(System.currentTimeMillis()))
                 .delFlag(false)
+                .accessExpiredMinutes(request.getAccessExpiredMinute())
+                .refreshExpiredDays(request.getRefreshExpiredDay())
                 .build();
 
         if (request.getEmailVerify() && !userPool.getUserFields().contains("email")) {
@@ -99,5 +100,19 @@ public class UserPoolService {
         userPool.setPrivateAccessKey(aesgcmUtils.decrypt(userPool.getPrivateAccessKey()));
         userPool.setPrivateRefreshKey(aesgcmUtils.decrypt(userPool.getPrivateRefreshKey()));
         return new UserPoolDTOFull(userPool);
+    }
+
+    public String updateUserPool(UserPoolRequest request) {
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        UserPool userPool = userPoolRepository.findById(request.getPoolId())
+                .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
+        if(!userPool.getAccount().getAccountId().equals(accountId)) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+        userPool.setPoolName(request.getPoolName());
+        userPool.setEmailVerify(request.getEmailVerify());
+        userPool.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        userPoolRepository.save(userPool);
+        return "Ok";
     }
 }

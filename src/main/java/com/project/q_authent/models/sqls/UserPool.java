@@ -63,4 +63,10 @@ public class UserPool {
 
     @Column(name = "role_levels")
     private String roleLevels;
+
+    @Column(name = "access_expired_minutes")
+    private Integer accessExpiredMinutes = 15;
+
+    @Column(name = "refresh_expired_days")
+    private Integer refreshExpiredDays = 7;
 }

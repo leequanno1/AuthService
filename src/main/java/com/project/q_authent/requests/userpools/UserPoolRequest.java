@@ -8,6 +8,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserPoolRequest {
+    private String poolId;
+
     private String userFields;
 
     private String authorizeFields;
@@ -17,4 +19,8 @@ public class UserPoolRequest {
     private Boolean emailVerify;
 
     private String roleLevels;
+
+    private int accessExpiredMinute;
+
+    private int refreshExpiredDay;
 }
