@@ -8,7 +8,22 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 
+/**
+ * RSA key utils
+ * Last updated at 2025/07/26
+ * @since 1.00
+ * @author leequanno1
+ */
 public class RSAKeyUtils {
+
+    /**
+     * Generate public key base on base64 private key
+     * @param base64PrivateKey {@link String}
+     * @return String public key
+     * @throws NoSuchAlgorithmException err
+     * @throws InvalidKeySpecException err
+     * @since 1.00
+     */
     public static String genPublicKey(String base64PrivateKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
         byte[] privateKeyBytes = Base64.getDecoder().decode(base64PrivateKey);
 
@@ -26,6 +41,13 @@ public class RSAKeyUtils {
         return Base64.getEncoder().encodeToString(publicKey.getEncoded());
     }
 
+    /**
+     * Generate RSA base64 private key.
+     *
+     * @param keySize {@link Integer} key size
+     * @return String RSA private key
+     * @throws Exception err
+     */
     public static String generateRsaPrivateKeyBase64(int keySize) throws Exception {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(keySize); // 2048 hoặc 4096

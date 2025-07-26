@@ -1,5 +1,11 @@
 package com.project.q_authent.constances;
 
+/**
+ * End point for public access
+ * Last update 2025/07/26
+ * @since 1.00
+ * @author leequanno1
+ */
 public class PublicEndpoint {
     public static final String[] endpoints = {
             "/auth/**",

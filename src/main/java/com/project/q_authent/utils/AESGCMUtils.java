@@ -2,14 +2,19 @@ package com.project.q_authent.utils;
 
 import org.springframework.stereotype.Component;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+/**
+ * AESGCM encode algorithm Utils
+ * Last updated at 2025/07/26
+ * @since 1.00
+ * @author leequanno1
+ */
 @Component
 public class AESGCMUtils {
 
@@ -21,6 +26,13 @@ public class AESGCMUtils {
         this.secretKey = keyProvider.getSecretKey();
     }
 
+    /**
+     * Encrypt plain text to encoded text
+     * @param plainText {@link String}
+     * @return encrypt string
+     * @throws Exception NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException
+     * @since 1.00
+     */
     public String encrypt(String plainText) throws Exception {
         byte[] iv = new byte[IV_SIZE];
         new SecureRandom().nextBytes(iv);
@@ -38,6 +50,13 @@ public class AESGCMUtils {
         return Base64.getEncoder().encodeToString(buffer.array());
     }
 
+    /**
+     * Decrypt encoded String to decoded String
+     * @param base64CipherText {@link String}
+     * @return decoded String
+     * @throws Exception err
+     * @since 1.00
+     */
     public String decrypt(String base64CipherText) throws Exception {
         byte[] decoded = Base64.getDecoder().decode(base64CipherText);
 

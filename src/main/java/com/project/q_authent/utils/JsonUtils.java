@@ -3,7 +3,20 @@ package com.project.q_authent.utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Json util
+ * Last updated at 2025/07/26
+ * @since 1.00
+ * @author leequanno1
+ */
 public class JsonUtils {
+
+    /**
+     * Convert object to json String
+     * @param obj {@link Object}
+     * @return json string
+     * @since 1.00
+     */
     public static String toJson(Object obj) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -13,6 +26,13 @@ public class JsonUtils {
         }
     }
 
+    /**
+     * Convert json string to object
+     * @param json {@link String}
+     * @return Converted object
+     * @param <T> Destination object type
+     * @since 1.00
+     */
     public static <T> T fromJson(String json) {
         try {
             TypeReference<T> typeRef = new TypeReference<>() {};

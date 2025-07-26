@@ -10,36 +10,68 @@ import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
 
+/**
+ * Jwt service for handle jwt process
+ * @since 1.00
+ * @author leequanno1
+ */
 @Service
 public class JwtService {
 
+    // Server access key value
     @Value("${custom.access-key}")
     private String accessKey;
 
+    // Server refresh key value
     @Value("${custom.refresh-key}")
     private String refreshKey;
-    private long accessExpirationMs = 15 * 60 * 1000;
-    private long refreshExpirationMs = 7 * 24 * 60 * 60 * 1000;
 
+    // Server access key expired min
+    @Value("${custom.access-expired-minute}")
+    private long accessExpirationMin;
+
+    // Server refresh key expired day
+    @Value("${custom.refresh-expired-day}")
+    private long refreshExpirationDay;
+
+    /**
+     * Handle generate access token
+     * @param account DB model
+     * @return String access token
+     * @since 1.00
+     */
     public String generateAccessToken(Account account) {
         return Jwts.builder()
                 .setSubject(account.getAccountId())
                 .claim("username", account.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessExpirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + accessExpirationMin * 60 * 1000))
                 .signWith(getSigningKey(accessKey))
                 .compact();
     }
 
+    /**
+     * Handle generate refresh token
+     * @param account DB model
+     * @return String refresh token
+     * @since 1.00
+     */
     public String generateRefreshToken(Account account) {
         return Jwts.builder()
                 .setSubject(account.getAccountId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationDay * 24 * 60 * 60 * 1000))
                 .signWith(getSigningKey(refreshKey))
                 .compact();
     }
 
+    /**
+     * Extract token subject (userId)
+     * @param token {@link String} token, can be access token or refresh token
+     * @param isRefresh {@link Boolean} if token is refresh token then true, otherwise false
+     * @return String subject (userid)
+     * @since 1.00
+     */
     public String extractAccountId(String token, boolean isRefresh) {
         return extractClaim(token, Claims::getSubject, isRefresh);
     }

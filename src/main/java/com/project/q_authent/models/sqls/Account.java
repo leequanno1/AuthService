@@ -52,4 +52,10 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AccountSetting> accountSettings;
+
+    @Column(name = "root_id")
+    private String rootId;
+
+    @Column(name = "parent_id")
+    private String parentId;
 }

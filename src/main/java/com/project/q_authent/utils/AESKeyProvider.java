@@ -8,9 +8,16 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
+/**
+ * AESKey provider
+ * Last updated at 2025/07/26
+ * @since 1.00
+ * @author leequanno1
+ */
 @Getter
 @Component
 public class AESKeyProvider {
+
     private final SecretKey secretKey;
 
     public AESKeyProvider(@Value("${custom.aes-key}") String base64Key) {

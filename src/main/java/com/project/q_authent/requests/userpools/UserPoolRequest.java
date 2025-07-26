@@ -4,6 +4,11 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * User pool request
+ * @since 1.00
+ * @author leequanno1
+ */
 @Data
 @Getter
 @Setter

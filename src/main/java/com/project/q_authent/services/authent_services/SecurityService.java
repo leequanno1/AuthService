@@ -11,6 +11,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * SecurityService
+ * Last update 2025/07/26
+ * @since 1.00
+ * @author leequanno1
+ */
 @Service
 @RequiredArgsConstructor
 public class SecurityService {
@@ -19,6 +25,13 @@ public class SecurityService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Handle login for service user
+     * @param username {@link String}
+     * @param password {@link String}
+     * @return TokenResponse if success, otherwise throw BadException
+     * @since 1.00
+     */
     public TokenResponse login(String username, String password) {
         Account account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
@@ -38,6 +51,12 @@ public class SecurityService {
         return new TokenResponse(refreshToken,accessToken);
     }
 
+    /**
+     * Handle refresh access token and refresh token
+     * @param refreshToken {@link String}
+     * @return TokenResponse if success, otherwise throw BadException
+     * @since 1.00
+     */
     public TokenResponse refreshToken(String refreshToken) {
         String accountId = jwtService.extractAccountId(refreshToken, true);
 
@@ -55,6 +74,12 @@ public class SecurityService {
         return new TokenResponse(newRefreshToken, newAccessToken);
     }
 
+    /**
+     * Handle registration new service user
+     * @param request {@link RegisterRequest}
+     * @return String OK if success, otherwise throw DadException
+     * @since 1.00
+     */
     public String register(RegisterRequest request) {
         // check existed user
         if(accountRepository.findByUsername(request.getUsername()).isPresent())

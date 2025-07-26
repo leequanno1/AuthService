@@ -1,13 +1,18 @@
 package com.project.q_authent.dtos;
 
 import com.project.q_authent.models.sqls.UserPool;
-import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
 
+/**
+ * User pool DTO for showing as list, minimize data showed
+ * Last updated at 2025/07/26
+ * @author leequanno1
+ * @since 1.00
+ */
 @Data
 @Getter
 @Setter
