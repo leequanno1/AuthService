@@ -29,7 +29,11 @@ public class UserPool {
     @Column(name = "authorize_fields", nullable = false, length = 1000)
     private String authorizeFields;
 
-    // raw key
+    /**
+     * encode before storage
+     * decode when sign
+     * AES-GCM algorithm
+     */
     @Column(name = "pool_key", nullable = false)
     private String poolKey;
 
@@ -45,13 +49,16 @@ public class UserPool {
     /**
      * encode before storage
      * decode when sign
-     * AES-GCM algorithm check GPT later
+     * AES-GCM algorithm
      */
-    // encrypt key
     @Column(name = "private_access_key", length = 660)
     private String privateAccessKey;
 
-    // encrypt key
+    /**
+     * encode before storage
+     * decode when sign
+     * AES-GCM algorithm
+     */
     @Column(name = "private_refresh_key", length = 660)
     private String privateRefreshKey;
 

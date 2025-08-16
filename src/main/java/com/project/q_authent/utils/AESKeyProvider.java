@@ -9,7 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
 /**
- * AESKey provider
+ * AESKey provider that use for generate AESGCM encrypt and decrypt algorithm
  * Last updated at 2025/07/26
  * @since 1.00
  * @author leequanno1

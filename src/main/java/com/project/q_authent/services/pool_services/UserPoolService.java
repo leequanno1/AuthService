@@ -49,9 +49,9 @@ public class UserPoolService {
                 .account(account)
                 .userFields(request.getUserFields())
                 .authorizeFields(request.getAuthorizeFields())
-                .poolKey(RandomKeyGenerator.generateKeyBase64(128)) // Raw key
-                .privateAccessKey(aesgcmUtils.encrypt(RSAKeyUtils.generateRsaPrivateKeyBase64(512))) //encrypt key
-                .privateRefreshKey(aesgcmUtils.encrypt(RSAKeyUtils.generateRsaPrivateKeyBase64(512))) //encrypt key
+                .poolKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(128))) //encrypt key
+                .privateAccessKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(512))) //encrypt key
+                .privateRefreshKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(512))) //encrypt key
                 .poolName(request.getPoolName())
                 .roleLevels(request.getRoleLevels())
                 .createdAt(new Timestamp(System.currentTimeMillis()))
@@ -112,7 +112,7 @@ public class UserPoolService {
         }
         userPool.setPrivateAccessKey(aesgcmUtils.decrypt(userPool.getPrivateAccessKey()));
         userPool.setPrivateRefreshKey(aesgcmUtils.decrypt(userPool.getPrivateRefreshKey()));
-        return new UserPoolDTOFull(userPool);
+        return new UserPoolDTOFull(userPool, aesgcmUtils);
     }
 
     public String updateUserPool(UserPoolRequest request) {

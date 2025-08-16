@@ -25,17 +25,27 @@ public class User {
     private String email;
     @Indexed
     private String phoneNumber;
+
     private String telCountryCode;
+
     private String password;
+
     private String lastName;
+
     private String firstName;
+
     private String avatarImg;
+
     private String backgroundImg;
+
     private String displayName;
+
     private Boolean gender;
+
     private String roleLevel;
     @Builder.Default
     private Boolean isValidated = false;
+
     private String poolId;
     @Builder.Default
     private Timestamp createdAtTimestamp = new Timestamp(System.currentTimeMillis());

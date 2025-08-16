@@ -46,7 +46,7 @@ public class SecurityService {
 
         String accessToken = jwtService.generateAccessToken(account);
         String refreshToken = jwtService.generateRefreshToken(account);
-        accountRepository.save(account);
+//        accountRepository.save(account);
 
         return new TokenResponse(refreshToken,accessToken);
     }

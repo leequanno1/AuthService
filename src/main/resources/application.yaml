@@ -17,10 +17,27 @@ spring:
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
   data:
+    # MONGO CONFIG ====================================================
     mongodb:
       uri: mongodb://localhost:27017/q_auth_mongo
     rest:
       base-path: /api
+    # REDIS CONFIG ====================================================
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 60s
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 5
+          min-idle: 1
+          max-wait: 1000ms
+
+  cache:
+    type: redis
+
 
 server:
   port: 8080
