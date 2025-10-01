@@ -26,7 +26,7 @@ public class AccountPolicy {
     private String policyId;
 
     @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
+    @JoinColumn(name = "target_account_id", nullable = false)
     private Account account;
 
     @ManyToOne
@@ -40,6 +40,12 @@ public class AccountPolicy {
     @ManyToOne
     @JoinColumn(name = "last_edit_id", nullable = false)
     private Account lastEditor;
+
+    @Column(name = "can_view")
+    private Boolean canView;
+
+    @Column(name = "can_delete")
+    private Boolean canDelete;
 
     @Column(name = "can_create", nullable = false)
     private Boolean canCreate;

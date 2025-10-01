@@ -41,14 +41,18 @@ public class UserPoolPolicy {
     @JoinColumn(name = "last_edit_id", nullable = false)
     private Account lastEditor;
 
-    @Column(name = "viewable_targets", nullable = false, length = 5000)
-    private String viewableTargets;
+    @ManyToOne
+    @JoinColumn(name = "pool_id", nullable = false)
+    private UserPool userPool;
 
-    @Column(name = "editable_targets", nullable = false, length = 5000)
-    private String editableTargets;
+    @Column(name = "can_view")
+    private Boolean canView; // poolIds that "account" user can view
 
-    @Column(name = "manageable_targets", nullable = false, length = 5000)
-    private String manageableTargets;
+    @Column(name = "can_edit")
+    private Boolean canEdit; // poolIds that "account" user can edit
+
+    @Column(name = "can_manage", nullable = false, length = 5000)
+    private Boolean canManage; // poolIds that "account" user can manage
 
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;
