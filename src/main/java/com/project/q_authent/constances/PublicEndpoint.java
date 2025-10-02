@@ -12,7 +12,10 @@ public class PublicEndpoint {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/api/auth/*"
+            "/api/auth/*",
+            "/api/account/send-code/*",
+            "/api/account/validate-code",
+            "/api/account/reset-forgot-password",
     };
 
 }

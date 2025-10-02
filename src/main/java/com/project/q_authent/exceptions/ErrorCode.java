@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum ErrorCode {
+    SOMETHING_WRONG(9998, "Something went wrong", HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized exception", HttpStatus.INTERNAL_SERVER_ERROR),
     // Code 1*** : Auth
     INVALID_KEY(1000, "Uncategorized exception", HttpStatus.BAD_REQUEST),
@@ -17,6 +18,9 @@ public enum ErrorCode {
     INVALID_TOKEN(1006, "Invalid token", HttpStatus.UNAUTHORIZED),
     OLD_REFRESH_TOKEN(1007, "Refresh token have been renew", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1008, "Unauthorized", HttpStatus.UNAUTHORIZED),
+    VALIDATION_CODE_NOT_FOUND(1009, "Validation code not found", HttpStatus.NOT_FOUND),
+    VALIDATION_CODE_EXPIRED(10010, "Validation code expired", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD(10011, "Invalid password", HttpStatus.BAD_REQUEST),
     // Code 2*** : UserPool
     FIELD_NEEDED(2000, "Email verify cant turn on", HttpStatus.BAD_REQUEST),
     POOL_NOT_FOUND(2001, "User pool is not found", HttpStatus.NOT_FOUND);

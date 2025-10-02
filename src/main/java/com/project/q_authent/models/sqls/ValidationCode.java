@@ -32,4 +32,5 @@ public class ValidationCode {
 
     @Column(name = "expire_time", nullable = false)
     private Timestamp expireTime;
+
 }

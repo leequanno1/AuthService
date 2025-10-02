@@ -4,18 +4,23 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.project.q_authent.constances.TableIdHeader;
 import com.project.q_authent.utils.IDUtil;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.sql.Timestamp;
 
-@Document(collation = "users")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "users")
 public class User {
+
     @Id
     @Builder.Default
     private String userId = IDUtil.getID(TableIdHeader.USER_HEADER);

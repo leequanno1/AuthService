@@ -16,7 +16,9 @@ public enum TableIdHeader {
     USER_POOL_HEADER("UPL"),
     USER_POLICY_HEADER("UPC"),
     POOL_POLICY_HEADER("PPC"),
-    USER_HEADER("USR");
+    USER_HEADER("USR"),
+    VALIDATION_CODE_HEADER("VLC"),;
+
 
     private final String value;
 
