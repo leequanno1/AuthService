@@ -1,5 +1,6 @@
 package com.project.q_authent.controllers;
 
+import com.project.q_authent.requests.account.ValidateCodeRequest;
 import com.project.q_authent.requests.auth.RegisterRequest;
 import com.project.q_authent.requests.auth.LoginRequest;
 import com.project.q_authent.requests.auth.RefreshTokenRequest;
@@ -59,4 +60,11 @@ public class AuthController {
     public JsonResponse<String> hello(){
         return JsonResponse.success("Hello world");
     }
+
+    @PostMapping("/active-user")
+    public JsonResponse<TokenResponse> activeSubUser(@RequestBody ValidateCodeRequest request) {
+
+        return JsonResponse.success(securityService.activeSubUser(request.getAccountId(), request.getCode()));
+    }
+
 }

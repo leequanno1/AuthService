@@ -15,7 +15,7 @@ public class SecurityUtils {
     /**
      * Retrieves the user id of the currently authenticated user.
      *
-     * @return the username of the current user or null if no authentication is present.
+     * @return the user ID of the current user or null if no authentication is present.
      * @since 1.00
      */
     public static String getCurrentUserId() {

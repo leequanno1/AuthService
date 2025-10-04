@@ -6,12 +6,9 @@ import com.project.q_authent.requests.userpools.UserPoolRequest;
 import com.project.q_authent.responses.JsonResponse;
 import com.project.q_authent.constances.AuthField;
 import com.project.q_authent.services.pool_services.UserPoolService;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 /**
@@ -58,7 +55,7 @@ public class UserPoolController {
      */
     @PostMapping("/update")
     public JsonResponse<String> updateUserPool(@RequestBody UserPoolRequest request) {
-        return JsonResponse.success(userPoolService.updateUserPool(request));
+        return JsonResponse.success(userPoolService.updateUserPool(request.getPoolId(), request.getPoolName(), request.getEmailVerify()));
     }
 
     /**

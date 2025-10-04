@@ -44,6 +44,8 @@ public class JwtService {
         return Jwts.builder()
                 .setSubject(account.getAccountId())
                 .claim("username", account.getUsername())
+                .claim("rootId", account.getRootId())
+                .claim("parentId", account.getParentId())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessExpirationMin * 60 * 1000))
                 .signWith(getSigningKey(accessKey))

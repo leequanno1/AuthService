@@ -1,6 +1,7 @@
 package com.project.q_authent.controllers;
 
 import com.project.q_authent.requests.account.ChangePasswordRequest;
+import com.project.q_authent.requests.account.CreateSubUserRequest;
 import com.project.q_authent.requests.account.ForgotPasswordRequest;
 import com.project.q_authent.requests.account.ValidateCodeRequest;
 import com.project.q_authent.responses.JsonResponse;
@@ -60,6 +61,17 @@ public class AccountController {
     public JsonResponse<String> changePassword(@RequestBody ChangePasswordRequest request) {
 
         return JsonResponse.success(accountService.changePassword(request.getOldPassword(), request.getNewPassword()));
+    }
+
+    /**
+     * Create subuser by using root account
+     * @param request include username, password, email {@link String}
+     * @return OK
+     */
+    @PostMapping("/create-subuser")
+    public JsonResponse<String> createSubUser(@RequestBody CreateSubUserRequest request) {
+
+        return JsonResponse.success(accountService.createSubUser(request.getUsername(), request.getPassword(), request.getEmail()));
     }
 
 }

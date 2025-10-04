@@ -3,15 +3,16 @@ package com.project.q_authent.models.nosqls;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.project.q_authent.constances.TableIdHeader;
 import com.project.q_authent.utils.IDUtil;
-import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
@@ -50,12 +51,12 @@ public class User {
     private String roleLevel;
     @Builder.Default
     private Boolean isValidated = false;
-
+    @Indexed
     private String poolId;
     @Builder.Default
-    private Timestamp createdAtTimestamp = new Timestamp(System.currentTimeMillis());
+    private Timestamp createdAtTimestamp = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
-    private Timestamp updatedAt = new Timestamp(System.currentTimeMillis());
+    private Timestamp updatedAt = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
     private Boolean delFlag = false;
 }

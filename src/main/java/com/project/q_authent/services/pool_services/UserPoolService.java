@@ -1,5 +1,6 @@
 package com.project.q_authent.services.pool_services;
 
+import com.project.q_authent.constances.AuthField;
 import com.project.q_authent.constances.TableIdHeader;
 import com.project.q_authent.dtos.UserPoolDTO;
 import com.project.q_authent.dtos.UserPoolDTOFull;
@@ -9,12 +10,19 @@ import com.project.q_authent.models.sqls.Account;
 import com.project.q_authent.models.sqls.UserPool;
 import com.project.q_authent.repositories.AccountRepository;
 import com.project.q_authent.repositories.UserPoolRepository;
+import com.project.q_authent.repositories.UserRepository;
 import com.project.q_authent.requests.userpools.UserPoolRequest;
-import com.project.q_authent.utils.*;
+import com.project.q_authent.utils.AESGCMUtils;
+import com.project.q_authent.utils.IDUtil;
+import com.project.q_authent.utils.JsonUtils;
+import com.project.q_authent.utils.SecurityUtils;
+import com.project.q_authent.utils.RandomKeyGenerator;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +38,7 @@ public class UserPoolService {
 
     private final AccountRepository accountRepository;
     private final UserPoolRepository userPoolRepository;
+    private final UserRepository userRepository;
     private final AESGCMUtils aesgcmUtils;
 
     /**
@@ -47,13 +56,13 @@ public class UserPoolService {
         UserPool userPool = UserPool.builder()
                 .poolId(IDUtil.getID(TableIdHeader.USER_POOL_HEADER))
                 .account(account)
-                .userFields(request.getUserFields())
-                .authorizeFields(request.getAuthorizeFields())
+                .userFields(JsonUtils.toJson(request.getUserFields()))
+                .authorizeFields(JsonUtils.toJson(request.getAuthorizeFields()))
                 .poolKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(128))) //encrypt key
                 .privateAccessKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(512))) //encrypt key
                 .privateRefreshKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(512))) //encrypt key
                 .poolName(request.getPoolName())
-                .roleLevels(request.getRoleLevels())
+                .roleLevels(JsonUtils.toJson(request.getRoleLevels()))
                 .createdAt(new Timestamp(System.currentTimeMillis()))
                 .updatedAt(new Timestamp(System.currentTimeMillis()))
                 .delFlag(false)
@@ -77,8 +86,8 @@ public class UserPoolService {
                 .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
         if(accountId.equals(userPool.getAccount().getAccountId())) {
             if(userPool.getDelFlag()) {
+                userRepository.deleteByPoolId(userPool.getPoolId());
                 userPoolRepository.delete(userPool);
-                // TODO: also delete all users in user schema that have poolId
             } else {
                 userPool.setDelFlag(true);
                 userPool.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
@@ -115,21 +124,45 @@ public class UserPoolService {
         return new UserPoolDTOFull(userPool, aesgcmUtils);
     }
 
-    public String updateUserPool(UserPoolRequest request) {
+    /**
+     * Update 2 edit available field {poolName, emailVerify}.
+     * If emailVerify is true and userFields dont have "email" so add one
+     * @param poolId {@link String}
+     * @param poolName {@link String}
+     * @param emailVerified {@link Boolean}
+     * @return OK
+     */
+    public String updateUserPool(String poolId, String poolName, Boolean emailVerified) {
         String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
-        UserPool userPool = userPoolRepository.findById(request.getPoolId())
+        UserPool userPool = userPoolRepository.findById(poolId)
                 .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
         if(!userPool.getAccount().getAccountId().equals(accountId)) {
             throw new BadException(ErrorCode.UNAUTHORIZED);
         }
-        userPool.setPoolName(request.getPoolName());
-        userPool.setEmailVerify(request.getEmailVerify());
-        if (request.getEmailVerify()) {
-            // TODO: handle add email field to auth field
-            System.out.println("Do nothing");
+
+        // Only do if poolName not null or empty
+        if (!Objects.isNull(poolName) && !poolName.isEmpty()) {
+            userPool.setPoolName(poolName);
         }
-        userPool.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        // Only do if emailVerified not null
+        if (!Objects.isNull(emailVerified)) {
+            userPool.setEmailVerify(emailVerified);
+            List<String> authentFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
+            if (emailVerified) {
+                List<String> userFields = JsonUtils.fromJson(userPool.getUserFields());
+                if (!userFields.contains(AuthField.EMAIL)) {
+                    userFields.add(AuthField.EMAIL);
+                }
+                if (!authentFields.contains(AuthField.EMAIL)) {
+                    userFields.add(AuthField.EMAIL);
+                }
+            } else {
+                authentFields.remove(AuthField.EMAIL);
+            }
+        }
+
+        userPool.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         userPoolRepository.save(userPool);
-        return "Ok";
+        return "OK";
     }
 }

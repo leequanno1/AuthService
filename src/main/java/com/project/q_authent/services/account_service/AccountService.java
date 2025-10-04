@@ -143,4 +143,47 @@ public class AccountService {
 
         return "OK";
     }
+
+    /**
+     * Create sub user fron root user
+     * @param username {@link String}
+     * @param password {@link String}
+     * @param email {@link String}
+     * @return OK
+     */
+    public String createSubUser(String username, String password, String email) {
+
+        String accountId = SecurityUtils.getCurrentUserId();
+
+        if (Objects.isNull(accountId)) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Account parentAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        String rootId = Objects.isNull(parentAccount.getRootId())? parentAccount.getAccountId() : parentAccount.getRootId();
+
+        // check subuser exist
+        if (accountRepository.countByRootIdAndUsernameOrEmail(rootId, username, email) != 0) {
+            throw new BadException(ErrorCode.USER_EXISTED);
+        }
+
+        Account account = Account
+                .builder()
+                .accountId(IDUtil.getID(TableIdHeader.ACCOUNT_HEADER))
+                .username(username)
+                .displayName(username)
+                .password(passwordEncoder.encode(password))
+                .email(email)
+                .active(false)
+                .parentId(accountId)
+                .rootId(rootId)
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .updatedAt(Timestamp.valueOf(LocalDateTime.now()))
+                .delFlag(false)
+                .build();
+
+        accountRepository.save(account);
+
+        return  "OK";
+    }
 }

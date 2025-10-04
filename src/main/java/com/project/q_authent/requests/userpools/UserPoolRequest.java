@@ -1,8 +1,11 @@
 package com.project.q_authent.requests.userpools;
 
+import com.project.q_authent.dtos.RoleLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 /**
  * User pool request
@@ -15,15 +18,15 @@ import lombok.Setter;
 public class UserPoolRequest {
     private String poolId;
 
-    private String userFields;
+    private List<String> userFields;
 
-    private String authorizeFields;
+    private List<String> authorizeFields;
 
     private String poolName;
-
+    // Is it need email verify when sign up or not
     private Boolean emailVerify;
 
-    private String roleLevels;
+    private List<RoleLevel> roleLevels;
 
     private int accessExpiredMinute;
 
