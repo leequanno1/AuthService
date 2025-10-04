@@ -33,6 +33,7 @@ public class Account {
     @Column(name = "display_name", nullable = false)
     private String displayName;
 
+    @Column(name = "avatar")
     private String avatar;
 
     @Column(nullable = false)

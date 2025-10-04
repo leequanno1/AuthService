@@ -59,6 +59,17 @@ public class UserPoolController {
     }
 
     /**
+     * This api use when a user want to fully modify a user pool.
+     * Most using after user create a blank pool so the pool admin can modify later.
+     * @param request @{@link UserPoolRequest}
+     * @return OK
+     */
+    @PostMapping("/advance-update")
+    public JsonResponse<String> advanceUpdateUserPool(@RequestBody UserPoolRequest request) {
+        return JsonResponse.success(userPoolService.advanceUpdateUserPool(request));
+    }
+
+    /**
      * Set del_flag for user that delete
      * @param poolId user pool id
      * @return "Ok" if success

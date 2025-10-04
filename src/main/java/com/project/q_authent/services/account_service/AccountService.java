@@ -1,6 +1,7 @@
 package com.project.q_authent.services.account_service;
 
 import com.project.q_authent.constances.TableIdHeader;
+import com.project.q_authent.dtos.AccountDTO;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
 import com.project.q_authent.models.sqls.Account;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Account Service
@@ -185,5 +188,45 @@ public class AccountService {
         accountRepository.save(account);
 
         return  "OK";
+    }
+
+    /**
+     * Show all sub accounts of a parent account's ID.
+     * First check current account is equal or higher level than the target parent.
+     * Then show all sub accounts
+     * @param parentId {@link String}
+     * @return {@link List} of {@link AccountDTO}
+     */
+    public List<AccountDTO> getSubAccountByParentId(String parentId) {
+
+        // check parent ship of parent ID
+        // is root, is parent, is parent of parent,...
+        Account targetParentAccount = accountRepository
+                .findById(parentId)
+                .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        String currentUserId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        boolean isHigherLevelParent = true;
+
+        if (!currentUserId.equals(targetParentAccount.getAccountId())
+                && !currentUserId.equals(targetParentAccount.getParentId())
+                && !currentUserId.equals(targetParentAccount.getRootId())) {
+
+            // loop to check if current account is a higher level parent
+            Account checkedAccount = accountRepository.getReferenceById(targetParentAccount.getParentId());
+            String rootId = checkedAccount.getRootId();
+            while (!rootId.equals(checkedAccount.getParentId()) && !currentUserId.equals(checkedAccount.getParentId())) {
+                checkedAccount = accountRepository.getReferenceById(checkedAccount.getParentId());
+            }
+
+            isHigherLevelParent = !rootId.equals(checkedAccount.getParentId());
+        }
+
+        if (!isHigherLevelParent) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // find all sub-account
+        List<Account> subAccounts = accountRepository.findAllByParentIdAndDelFlag(parentId,false);
+        return subAccounts.stream().map(AccountDTO::new).collect(Collectors.toList());
     }
 }

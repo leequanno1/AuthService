@@ -140,6 +140,7 @@ public class UserPoolService {
             throw new BadException(ErrorCode.UNAUTHORIZED);
         }
 
+        // TODO: check policy to verify user can edit
         // Only do if poolName not null or empty
         if (!Objects.isNull(poolName) && !poolName.isEmpty()) {
             userPool.setPoolName(poolName);
@@ -163,6 +164,27 @@ public class UserPoolService {
 
         userPool.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         userPoolRepository.save(userPool);
+        return "OK";
+    }
+
+    public String advanceUpdateUserPool(UserPoolRequest request) {
+
+        // find pool with id
+        UserPool userPool = userPoolRepository
+                .findById(request.getPoolId())
+                .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
+        // TODO: check policy, or is root to verify user can edit
+        // set pool properties
+        userPool.setUserFields(JsonUtils.toJson(request.getUserFields()));
+        userPool.setAuthorizeFields(JsonUtils.toJson(request.getAuthorizeFields()));
+        userPool.setPoolName(request.getPoolName());
+        userPool.setEmailVerify(request.getEmailVerify());
+        userPool.setRoleLevels(JsonUtils.toJson(request.getRoleLevels()));
+        userPool.setAccessExpiredMinutes(request.getAccessExpiredMinute());
+        userPool.setRefreshExpiredDays(request.getRefreshExpiredDay());
+        userPool.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        userPoolRepository.save(userPool);
+
         return "OK";
     }
 }

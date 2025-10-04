@@ -1,5 +1,6 @@
 package com.project.q_authent.controllers;
 
+import com.project.q_authent.dtos.AccountDTO;
 import com.project.q_authent.requests.account.ChangePasswordRequest;
 import com.project.q_authent.requests.account.CreateSubUserRequest;
 import com.project.q_authent.requests.account.ForgotPasswordRequest;
@@ -9,6 +10,8 @@ import com.project.q_authent.services.account_service.AccountService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Authentication controller
@@ -72,6 +75,19 @@ public class AccountController {
     public JsonResponse<String> createSubUser(@RequestBody CreateSubUserRequest request) {
 
         return JsonResponse.success(accountService.createSubUser(request.getUsername(), request.getPassword(), request.getEmail()));
+    }
+
+    /**
+     * Show all sub accounts of a parent account's ID.
+     * First check current account is equal or higher level than the target parent.
+     * Then show all sub accounts
+     * @param parentId {@link String}
+     * @return {@link List} of {@link AccountDTO}
+     */
+    @GetMapping("/get-all/{parent-id}")
+    public JsonResponse<List<AccountDTO>> getSubAccountByParentId(@PathVariable("parent-id") String parentId) {
+
+        return JsonResponse.success(accountService.getSubAccountByParentId(parentId));
     }
 
 }

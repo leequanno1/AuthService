@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,5 +22,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     int countByRootIdAndUsernameOrEmail(@Param("rootId") String rootId,
                                          @Param("username") String username,
                                          @Param("email") String email);
+
+    List<Account> findAllByParentIdAndDelFlag(String parentId, Boolean delFlag);
 }
 
