@@ -27,7 +27,7 @@ public class AccountPolicy {
 
     @ManyToOne
     @JoinColumn(name = "target_account_id", nullable = false)
-    private Account account;
+    private Account targetAccount;
 
     @ManyToOne
     @JoinColumn(name = "root_id", nullable = false)
