@@ -7,7 +7,8 @@ import com.project.q_authent.services.account_policy_service.AccountPolicyServic
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-@RestController("/api/account-policy")
+@RestController
+@RequestMapping("/api/account-policy")
 @RequiredArgsConstructor
 public class AccountPolicyController {
 

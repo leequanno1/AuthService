@@ -38,7 +38,7 @@ public class AccountPolicyDTO {
     public AccountPolicyDTO(AccountPolicy accountPolicy) {
 
         policyId =  accountPolicy.getPolicyId();
-        targetAccountId = accountPolicy.getAccount().getAccountId();
+        targetAccountId = accountPolicy.getTargetAccount().getAccountId();
         rootId = accountPolicy.getRoot().getRootId();
         creatorId = accountPolicy.getCreator().getAccountId();
         lastEditorId = accountPolicy.getLastEditor().getAccountId();

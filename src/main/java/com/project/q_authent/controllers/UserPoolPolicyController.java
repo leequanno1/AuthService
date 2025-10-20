@@ -7,9 +7,8 @@ import com.project.q_authent.services.pool_policy_service.UserPoolPolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-@RestController("/api/pool-policy")
+@RestController
+@RequestMapping("/api/pool-policy")
 @RequiredArgsConstructor
 public class UserPoolPolicyController {
 
