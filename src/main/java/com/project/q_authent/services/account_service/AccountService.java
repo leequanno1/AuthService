@@ -16,6 +16,7 @@ import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -99,6 +100,7 @@ public class AccountService {
      * @return accountId {@link String}
      * @throws MessagingException ex
      */
+    @Transactional
     public String sendCode(String emailOrUsername) throws MessagingException {
         // get account by email or username
         Account account = accountRepository
@@ -191,7 +193,7 @@ public class AccountService {
     }
 
     /**
-     * Show all sub accounts of a parent account's ID.
+     * Show all sub-accounts of a parent account's ID.
      * First check current account is equal or higher level than the target parent.
      * Then show all sub accounts
      * @param parentId {@link String}
@@ -228,5 +230,35 @@ public class AccountService {
         // find all sub-account
         List<Account> subAccounts = accountRepository.findAllByParentIdAndDelFlag(parentId,false);
         return subAccounts.stream().map(AccountDTO::new).collect(Collectors.toList());
+    }
+
+    /**
+     * Check exist account, throw exception if exist
+     * @param rootId rootID
+     * @param email email
+     * @param username username
+     * @return OK if have no account in root ID have email and username
+     */
+    public String checkAccountExists(String rootId, String email, String username) {
+
+        if (!rootId.startsWith(TableIdHeader.ACCOUNT_HEADER.getValue())) {
+            if (accountRepository.countAccountsByRootIdIsNullAndEmail(email) > 0) {
+                throw new BadException(ErrorCode.EMAIL_USED);
+            }
+
+            if (accountRepository.countAccountsByRootIdIsNullAndUsername(username) > 0) {
+                throw new BadException(ErrorCode.USER_EXISTED);
+            }
+        } else {
+            if (accountRepository.countAccountsByRootIdAndEmail(rootId, email) > 0) {
+                throw new BadException(ErrorCode.EMAIL_USED);
+            }
+
+            if (accountRepository.countAccountsByRootIdAndUsername(rootId, username) > 0) {
+                throw new BadException(ErrorCode.USER_EXISTED);
+            }
+        }
+
+        return "OK";
     }
 }

@@ -1,8 +1,11 @@
 package com.project.q_authent.services.authent_services;
+import com.project.q_authent.dtos.AccountDTO;
 import com.project.q_authent.models.sqls.Account;
+import com.project.q_authent.utils.JsonUtils;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.swagger.v3.core.util.Json;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -43,9 +46,7 @@ public class JwtService {
     public String generateAccessToken(Account account) {
         return Jwts.builder()
                 .setSubject(account.getAccountId())
-                .claim("username", account.getUsername())
-                .claim("rootId", account.getRootId())
-                .claim("parentId", account.getParentId())
+                .claim("details", new AccountDTO(account))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessExpirationMin * 60 * 1000))
                 .signWith(getSigningKey(accessKey))

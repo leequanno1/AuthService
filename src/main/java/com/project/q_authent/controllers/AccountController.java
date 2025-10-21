@@ -90,4 +90,20 @@ public class AccountController {
         return JsonResponse.success(accountService.getSubAccountByParentId(parentId));
     }
 
+    /**
+     * Check exist account, throw exception if exist
+     * @param rootId
+     * @param email
+     * @param username
+     * @return OK if have no account in root ID have email and username
+     */
+    @GetMapping("/check-existed/{root-id}/{email}/{username}")
+    public JsonResponse<String> checkAccountExists(
+            @PathVariable("root-id") String rootId,
+            @PathVariable("email") String email,
+            @PathVariable("username") String username) {
+
+        return JsonResponse.success(accountService.checkAccountExists(rootId, email, username));
+    }
+
 }

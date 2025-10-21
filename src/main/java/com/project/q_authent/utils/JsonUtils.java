@@ -22,6 +22,7 @@ public class JsonUtils {
             ObjectMapper mapper = new ObjectMapper();
             return mapper.writeValueAsString(obj);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Failed to convert object to JSON", e);
         }
     }

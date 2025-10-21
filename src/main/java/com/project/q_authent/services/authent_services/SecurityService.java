@@ -12,9 +12,11 @@ import com.project.q_authent.utils.IDUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * SecurityService
@@ -85,24 +87,38 @@ public class SecurityService {
      * @return String OK if success, otherwise throw DadException
      * @since 1.00
      */
+    @Transactional
     public String register(RegisterRequest request) {
         // check existed user
-        if(accountRepository.findByUsername(request.getUsername()).isPresent())
-            throw new BadException(ErrorCode.USER_EXISTED);
+        Account account = accountRepository.findByUsername(request.getUsername()).orElse(null);
+        if(!Objects.isNull(account)) {
+            if (!Objects.isNull(account.getActive()) && account.getActive()) {
+                throw new BadException(ErrorCode.USER_EXISTED);
+            } else {
+                validationCodeRepository.deleteAllByTargetAccount(account);
+                accountRepository.delete(account);
+            }
+        }
         // check exited email
-        if(accountRepository.findByEmail(request.getEmail()).isPresent())
-            throw new BadException(ErrorCode.EMAIL_USED);
+        account = accountRepository.findByEmail(request.getEmail()).orElse(null);
+        if(!Objects.isNull(account)) {
+            if (!Objects.isNull(account.getActive()) && account.getActive()) {
+                throw new BadException(ErrorCode.EMAIL_USED);
+            } else {
+                validationCodeRepository.deleteAllByTargetAccount(account);
+                accountRepository.delete(account);
+            }
+        }
         // create user
-        Account account = Account.builder()
+        account = Account.builder()
                 .accountId(IDUtil.getID(TableIdHeader.ACCOUNT_HEADER))
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .email(request.getEmail())
                 .displayName(request.getDisplayName())
-                .active(true)
+                .active(false)
                 .build();
         accountRepository.save(account);
-        // TODO: send active account link that expire in 5 minutes
         return "OK";
     }
 
