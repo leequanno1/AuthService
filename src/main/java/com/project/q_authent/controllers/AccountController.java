@@ -69,7 +69,7 @@ public class AccountController {
     /**
      * Create subuser by using root account
      * @param request include username, password, email {@link String}
-     * @return OK
+     * @return sub-user ID
      */
     @PostMapping("/create-subuser")
     public JsonResponse<String> createSubUser(@RequestBody CreateSubUserRequest request) {

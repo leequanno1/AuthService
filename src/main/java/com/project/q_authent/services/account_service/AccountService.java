@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -154,7 +155,7 @@ public class AccountService {
      * @param username {@link String}
      * @param password {@link String}
      * @param email {@link String}
-     * @return OK
+     * @return sub-user ID
      */
     public String createSubUser(String username, String password, String email) {
 
@@ -167,14 +168,17 @@ public class AccountService {
         Account parentAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
         String rootId = Objects.isNull(parentAccount.getRootId())? parentAccount.getAccountId() : parentAccount.getRootId();
 
-        // check subuser exist
-        if (accountRepository.countByRootIdAndUsernameOrEmail(rootId, username, email) != 0) {
+        if (!accountRepository.findAllByRootIdAndUsername(rootId, username).orElse(new ArrayList<>()).isEmpty()) {
             throw new BadException(ErrorCode.USER_EXISTED);
         }
+        if (!accountRepository.findAllByRootIdAndEmail(rootId, email).orElse(new ArrayList<>()).isEmpty()) {
+            throw new BadException(ErrorCode.EMAIL_USED);
+        }
 
+        String newAccountId = IDUtil.getID(TableIdHeader.ACCOUNT_HEADER);
         Account account = Account
                 .builder()
-                .accountId(IDUtil.getID(TableIdHeader.ACCOUNT_HEADER))
+                .accountId(newAccountId)
                 .username(username)
                 .displayName(username)
                 .password(passwordEncoder.encode(password))
@@ -189,7 +193,7 @@ public class AccountService {
 
         accountRepository.save(account);
 
-        return  "OK";
+        return  newAccountId;
     }
 
     /**

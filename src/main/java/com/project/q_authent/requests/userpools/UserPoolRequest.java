@@ -28,7 +28,7 @@ public class UserPoolRequest {
 
     private List<RoleLevel> roleLevels;
 
-    private int accessExpiredMinute;
+    private Integer accessExpiredMinutes;
 
-    private int refreshExpiredDay;
+    private Integer refreshExpiredDays;
 }

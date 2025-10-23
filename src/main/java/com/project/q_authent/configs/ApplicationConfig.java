@@ -20,8 +20,8 @@ public class ApplicationConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // áp dụng cho mọi endpoint
-                        .allowedOrigins("http://localhost:3000") // cho phép frontend
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost:3000")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

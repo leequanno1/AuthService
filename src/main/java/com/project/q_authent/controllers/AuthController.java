@@ -53,7 +53,7 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public JsonResponse<TokenResponse> refresh(@RequestBody RefreshTokenRequest request) {
-        return JsonResponse.success(securityService.refreshToken(request.getRefreshToke()));
+        return JsonResponse.success(securityService.refreshToken(request.getRefreshToken()));
     }
 
     @GetMapping("/hello-word")

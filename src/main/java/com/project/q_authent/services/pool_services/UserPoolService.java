@@ -44,7 +44,7 @@ public class UserPoolService {
     /**
      * Create new user pool
      * @param request {@link UserPoolRequest}
-     * @return String OK if success, otherwise throw BadException
+     * @return String PoolID if success, otherwise throw BadException
      * @throws Exception key encode error
      * @since 1.00
      */
@@ -53,8 +53,13 @@ public class UserPoolService {
         Account account = accountRepository.findById(userId).orElseThrow(
                 () -> new BadException(ErrorCode.USER_NOT_FOUND)
         );
+        // Check if any pool has the same name
+        if (!userPoolRepository.findAllByAccountAndPoolName(account, request.getPoolName()).isEmpty()) {
+            throw new BadException(ErrorCode.POOL_NAME_EXISTED);
+        }
+        String newPoolID = IDUtil.getID(TableIdHeader.USER_POOL_HEADER);
         UserPool userPool = UserPool.builder()
-                .poolId(IDUtil.getID(TableIdHeader.USER_POOL_HEADER))
+                .poolId(newPoolID)
                 .account(account)
                 .userFields(JsonUtils.toJson(request.getUserFields()))
                 .authorizeFields(JsonUtils.toJson(request.getAuthorizeFields()))
@@ -66,8 +71,8 @@ public class UserPoolService {
                 .createdAt(new Timestamp(System.currentTimeMillis()))
                 .updatedAt(new Timestamp(System.currentTimeMillis()))
                 .delFlag(false)
-                .accessExpiredMinutes(request.getAccessExpiredMinute())
-                .refreshExpiredDays(request.getRefreshExpiredDay())
+                .accessExpiredMinutes(request.getAccessExpiredMinutes())
+                .refreshExpiredDays(request.getRefreshExpiredDays())
                 .build();
 
         if (request.getEmailVerify() && !userPool.getUserFields().contains("email")) {
@@ -77,7 +82,7 @@ public class UserPoolService {
         }
 
         userPoolRepository.save(userPool);
-        return "Ok";
+        return newPoolID;
     }
 
     public String deleteUserPool(String poolId) {
@@ -180,8 +185,8 @@ public class UserPoolService {
         userPool.setPoolName(request.getPoolName());
         userPool.setEmailVerify(request.getEmailVerify());
         userPool.setRoleLevels(JsonUtils.toJson(request.getRoleLevels()));
-        userPool.setAccessExpiredMinutes(request.getAccessExpiredMinute());
-        userPool.setRefreshExpiredDays(request.getRefreshExpiredDay());
+        userPool.setAccessExpiredMinutes(request.getAccessExpiredMinutes());
+        userPool.setRefreshExpiredDays(request.getRefreshExpiredDays());
         userPool.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         userPoolRepository.save(userPool);
 

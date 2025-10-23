@@ -16,13 +16,12 @@ public interface AccountRepository extends JpaRepository<Account, String> {
 
     Optional<Account> findByEmailOrUsername(String email, String username);
 
-    @Query("SELECT COUNT(u) FROM Account u " +
-            "WHERE u.rootId = :rootId " +
-            "AND (u.username = :username OR u.email = :email) " +
-            "AND u.active = true")
-    int countByRootIdAndUsernameOrEmail(@Param("rootId") String rootId,
-                                         @Param("username") String username,
-                                         @Param("email") String email);
+//    @Query("SELECT COUNT(u) FROM Account u " +
+//            "WHERE u.rootId = :rootId " +
+//            "AND (u.username = :username OR u.email = :email) ")
+//    int countByRootIdAndUsernameOrEmail(@Param("rootId") String rootId,
+//                                                 @Param("username") String username,
+//                                                 @Param("email") String email);
 
     List<Account> findAllByParentIdAndDelFlag(String parentId, Boolean delFlag);
 
@@ -41,5 +40,9 @@ public interface AccountRepository extends JpaRepository<Account, String> {
             "AND u.username = :username " +
             "AND u.active = true ")
     long countAccountsByRootIdIsNullAndUsername(@Param("username") String username);
+
+    Optional<List<Account>> findAllByRootIdAndUsername(String rootId, String username);
+
+    Optional<List<Account>> findAllByRootIdAndEmail(String rootId, String email);
 }
 

@@ -41,9 +41,10 @@ public enum ErrorCode {
 
     POOL_NOT_FOUND(2001, "User pool is not found", HttpStatus.NOT_FOUND),
 
+    POOL_NAME_EXISTED(2002, "User pool name existed", HttpStatus.BAD_REQUEST ),
+
     // Code 3*** : Policy
-    POLICY_NOT_FOUND(3000, "Policy is not found", HttpStatus.NOT_FOUND),
-    ;
+    POLICY_NOT_FOUND(3000, "Policy is not found", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

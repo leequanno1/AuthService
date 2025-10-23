@@ -37,7 +37,7 @@ public class UserPoolController {
     /**
      * Create new user pool
      * @param request user pool info
-     * @return "Ok" if success
+     * @return PoolID if success
      * @throws Exception if fail when encrypt key or 403
      * @since 1.00
      */
