@@ -1,6 +1,5 @@
 package com.project.q_authent.controllers;
 
-import com.project.q_authent.dtos.UserPoolDTO;
 import com.project.q_authent.dtos.UserPoolDTOFull;
 import com.project.q_authent.requests.userpools.UserPoolRequest;
 import com.project.q_authent.responses.JsonResponse;
@@ -81,13 +80,24 @@ public class UserPoolController {
     }
 
     /**
+     * Set del_flag for user that delete
+     * @param poolIds user pool ids
+     * @return "Ok" if success
+     * @since 1.00
+     */
+    @PostMapping("/delete-many")
+    public JsonResponse<String> deleteUserPools(@RequestBody List<String> poolIds) {
+        return JsonResponse.success(userPoolService.deleteUserPools(poolIds));
+    }
+
+    /**
      * Return User pool information
      * @param showDeleted show deleted pool, true if user want to show, otherwise false
      * @return JsonResponse<List<UserPoolDTO>> result
      * @since 1.00
      */
     @GetMapping("/get-all/{showDeleted}")
-    public JsonResponse<List<UserPoolDTO>> getAllUserPool(@PathVariable("showDeleted") boolean showDeleted){
+    public JsonResponse<List<UserPoolDTOFull>> getAllUserPool(@PathVariable("showDeleted") boolean showDeleted){
         return JsonResponse.success(userPoolService.getAllUserPool(showDeleted));
     }
 

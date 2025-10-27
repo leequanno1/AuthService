@@ -265,4 +265,17 @@ public class AccountService {
 
         return "OK";
     }
+
+    public AccountDTO getRootAccount() {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        AccountDTO rootAccount;
+        if (Objects.isNull(account.getRootId())) {
+            rootAccount = new AccountDTO(account);
+        } else {
+            rootAccount = new AccountDTO(accountRepository.findById(account.getRootId()).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND)));
+        }
+        return rootAccount;
+    }
 }

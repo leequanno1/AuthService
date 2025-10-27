@@ -2,7 +2,6 @@ package com.project.q_authent.services.pool_services;
 
 import com.project.q_authent.constances.AuthField;
 import com.project.q_authent.constances.TableIdHeader;
-import com.project.q_authent.dtos.UserPoolDTO;
 import com.project.q_authent.dtos.UserPoolDTOFull;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
@@ -20,6 +19,7 @@ import com.project.q_authent.utils.RandomKeyGenerator;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -104,17 +104,26 @@ public class UserPoolService {
         return "Ok";
     }
 
-    public List<UserPoolDTO> getAllUserPool(boolean showDeleted) {
+    public List<UserPoolDTOFull> getAllUserPool(boolean showDeleted) {
         String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        //Get account and get root ID
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        String rootId = Objects.isNull(account.getRootId()) ? account.getAccountId() : account.getRootId();
         List<UserPool> userPools;
         if(showDeleted) {
-            userPools = userPoolRepository.findUserPoolsByAccount_AccountId(accountId)
+            userPools = userPoolRepository.findUserPoolsByAccount_AccountId(rootId)
                     .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
         } else {
-            userPools = userPoolRepository.findUserPoolsByAccount_AccountIdAndDelFlag(accountId, false)
+            userPools = userPoolRepository.findUserPoolsByAccount_AccountIdAndDelFlag(rootId, false)
                     .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
         }
-        return userPools.stream().map(UserPoolDTO::new).toList();
+        return userPools.stream().map((item) -> {
+            try {
+                return new UserPoolDTOFull(item, aesgcmUtils);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).toList();
     }
 
     public UserPoolDTOFull getPoolDetail(String poolId) throws Exception {
@@ -191,5 +200,26 @@ public class UserPoolService {
         userPoolRepository.save(userPool);
 
         return "OK";
+    }
+
+    @Transactional
+    public String deleteUserPools(List<String> poolIds) {
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        List<UserPool> userPools = userPoolRepository.findAllByPoolIdIsIn(poolIds);
+        for (UserPool userPool : userPools) {
+            if(accountId.equals(userPool.getAccount().getAccountId())) {
+                if(userPool.getDelFlag()) {
+                    userRepository.deleteByPoolId(userPool.getPoolId());
+                    userPoolRepository.delete(userPool);
+                } else {
+                    userPool.setDelFlag(true);
+                    userPool.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+                    userPoolRepository.save(userPool);
+                }
+            } else {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+        return "Ok";
     }
 }

@@ -1,6 +1,7 @@
 package com.project.q_authent.services.pool_policy_service;
 
 import com.project.q_authent.constances.TableIdHeader;
+import com.project.q_authent.dtos.AccountDTO;
 import com.project.q_authent.dtos.UserPoolPolicyDTO;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,6 +87,7 @@ public class UserPoolPolicyService {
                     .root(rootAccount)
                     .creator(attachAccount)
                     .lastEditor(attachAccount)
+                    .account(targetAccount)
                     .userPool(userPool)
                     .canView(request.getCanView())
                     .canEdit(request.getCanEdit())
@@ -112,5 +116,22 @@ public class UserPoolPolicyService {
                 .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
 
         return new UserPoolPolicyDTO(userPoolPolicy);
+    }
+
+    public List<UserPoolPolicyDTO> getPolicyByTargetId(String targetId) {
+
+        List<UserPoolPolicy> userPoolPolicies = userPoolPolicyRepository
+                .findAllByAccount_AccountId(targetId)
+                .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        return userPoolPolicies.stream().map(UserPoolPolicyDTO::new).collect(Collectors.toList());
+    }
+
+    public List<AccountDTO> getPolicyByParentAndPoolID(String parentId, String poolId) {
+        List<UserPoolPolicy> userPoolPolicies = userPoolPolicyRepository
+                .findAllByCreator_AccountIdAndUserPool_PoolId(parentId, poolId)
+                .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        return userPoolPolicies.stream().map((item) -> new AccountDTO(item.getAccount())).collect(Collectors.toList());
     }
 }

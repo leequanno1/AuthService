@@ -78,9 +78,9 @@ public class AccountController {
     }
 
     /**
-     * Show all sub accounts of a parent account's ID.
+     * Show all subaccounts of a parent account's ID.
      * First check current account is equal or higher level than the target parent.
-     * Then show all sub accounts
+     * Then show all subaccounts
      * @param parentId {@link String}
      * @return {@link List} of {@link AccountDTO}
      */
@@ -92,10 +92,10 @@ public class AccountController {
 
     /**
      * Check exist account, throw exception if exist
-     * @param rootId
-     * @param email
-     * @param username
-     * @return OK if have no account in root ID have email and username
+     * @param rootId rootID
+     * @param email email
+     * @param username username
+     * @return OK weather have no account in root ID have email and username
      */
     @GetMapping("/check-existed/{root-id}/{email}/{username}")
     public JsonResponse<String> checkAccountExists(
@@ -106,4 +106,8 @@ public class AccountController {
         return JsonResponse.success(accountService.checkAccountExists(rootId, email, username));
     }
 
+    @GetMapping("/get-root")
+    public JsonResponse<AccountDTO> getRootAccount() {
+        return  JsonResponse.success(accountService.getRootAccount());
+    }
 }

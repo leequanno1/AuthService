@@ -1,11 +1,14 @@
 package com.project.q_authent.controllers;
 
+import com.project.q_authent.dtos.AccountDTO;
 import com.project.q_authent.dtos.UserPoolPolicyDTO;
 import com.project.q_authent.requests.policy.PoolPolicyRequest;
 import com.project.q_authent.responses.JsonResponse;
 import com.project.q_authent.services.pool_policy_service.UserPoolPolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/pool-policy")
@@ -37,5 +40,16 @@ public class UserPoolPolicyController {
         return JsonResponse.success(userPoolPolicyService.getPolicyByTargetId(targetId, poolId));
     }
 
+    @GetMapping("/accounts/{parent-id}/{pool-id}")
+    public JsonResponse<List<AccountDTO>> getAllPolicies(@PathVariable("parent-id") String parentId, @PathVariable("pool-id") String poolId) {
+
+        return JsonResponse.success(userPoolPolicyService.getPolicyByParentAndPoolID(parentId,poolId));
+    }
+
+    @GetMapping("/get-all/{user-id}")
+    public JsonResponse<List<UserPoolPolicyDTO>> getAllPolicies(@PathVariable("user-id") String targetId) {
+
+        return JsonResponse.success(userPoolPolicyService.getPolicyByTargetId(targetId));
+    }
 
 }
