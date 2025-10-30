@@ -91,7 +91,7 @@ public class AccountPolicyService {
         return "OK";
     }
     /**
-     * Find account policy by target account ID and pool ID
+     * Find account policy by target account ID
      * @param targetId userId {@link String}
      * @return DTO of account policy
      */

@@ -134,4 +134,28 @@ public class UserPoolPolicyService {
 
         return userPoolPolicies.stream().map((item) -> new AccountDTO(item.getAccount())).collect(Collectors.toList());
     }
+
+    public String deletePolicy(String policyId) {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        UserPoolPolicy policy = userPoolPolicyRepository.findById(policyId).orElseThrow(() -> new BadException(ErrorCode.POLICY_NOT_FOUND));
+        if (!accountId.equals(policy.getCreator().getAccountId())) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+        userPoolPolicyRepository.delete(policy);
+        return "OK";
+    }
+
+    public String deletePolicyMany(List<String> policyIds) {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        List<UserPoolPolicy> userPoolPolicies = userPoolPolicyRepository.findAllById(policyIds);
+        for (UserPoolPolicy policy : userPoolPolicies) {
+            if (!accountId.equals(policy.getCreator().getAccountId())) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+        userPoolPolicyRepository.deleteAll(userPoolPolicies);
+        return "OK";
+    }
 }

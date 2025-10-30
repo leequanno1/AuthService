@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,5 +45,11 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     Optional<List<Account>> findAllByRootIdAndUsername(String rootId, String username);
 
     Optional<List<Account>> findAllByRootIdAndEmail(String rootId, String email);
+
+    List<Account> getAllByParentId(String parentId);
+
+    List<Account> findAllByParentIdIn(Collection<String> parentIds);
+
+    List<Account> findAllByParentIdInAndDelFlag(Collection<String> parentIds, Boolean delFlag);
 }
 

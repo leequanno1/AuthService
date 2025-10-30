@@ -2,6 +2,7 @@ package com.project.q_authent.repositories;
 
 import com.project.q_authent.models.sqls.Account;
 import com.project.q_authent.models.sqls.UserPool;
+import com.project.q_authent.models.sqls.UserPoolPolicy;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,4 +20,5 @@ public interface UserPoolRepository extends JpaRepository<UserPool, String> {
     List<UserPool> findAllByAccountAndPoolName(Account account, String poolName);
 
     List<UserPool> findAllByPoolIdIsIn(Collection<String> poolIds);
+
 }

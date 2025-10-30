@@ -7,7 +7,9 @@ import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
 import com.project.q_authent.models.sqls.Account;
 import com.project.q_authent.models.sqls.UserPool;
+import com.project.q_authent.models.sqls.UserPoolPolicy;
 import com.project.q_authent.repositories.AccountRepository;
+import com.project.q_authent.repositories.UserPoolPolicyRepository;
 import com.project.q_authent.repositories.UserPoolRepository;
 import com.project.q_authent.repositories.UserRepository;
 import com.project.q_authent.requests.userpools.UserPoolRequest;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,6 +41,7 @@ public class UserPoolService {
 
     private final AccountRepository accountRepository;
     private final UserPoolRepository userPoolRepository;
+    private final UserPoolPolicyRepository userPoolPolicyRepository;
     private final UserRepository userRepository;
     private final AESGCMUtils aesgcmUtils;
 
@@ -221,5 +225,27 @@ public class UserPoolService {
             }
         }
         return "Ok";
+    }
+
+    /**
+     * look in pool policies for pool have account id parent ID equal request account id
+     * @param accID acc ID
+     * @return {@link List}
+     */
+    public List<UserPoolDTOFull> getByAttachedByAccID(String accID) {
+        // get policies with target ID equal accID
+        List<UserPoolPolicy> poolPolicies = userPoolPolicyRepository.findAllByAccount_AccountIdAndDelFlag(accID, false);
+
+        if(Objects.isNull(poolPolicies) || poolPolicies.isEmpty()) {
+            throw new BadException(ErrorCode.POOL_NOT_FOUND);
+        }
+
+        return poolPolicies.stream().map((plc) -> {
+            try {
+                return new UserPoolDTOFull(plc.getUserPool(), aesgcmUtils);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).toList();
     }
 }

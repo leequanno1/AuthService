@@ -15,4 +15,6 @@ public interface UserPoolPolicyRepository extends JpaRepository<UserPoolPolicy,S
     Optional<List<UserPoolPolicy>> findAllByAccount_AccountId(String accountAccountId);
 
     Optional<List<UserPoolPolicy>> findAllByCreator_AccountIdAndUserPool_PoolId(String creatorAccountId, String userPoolPoolId);
+
+    List<UserPoolPolicy> findAllByAccount_AccountIdAndDelFlag(String accountAccountId, Boolean delFlag);
 }

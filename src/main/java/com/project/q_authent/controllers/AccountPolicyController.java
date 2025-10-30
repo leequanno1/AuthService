@@ -25,14 +25,8 @@ public class AccountPolicyController {
         return JsonResponse.success(accountPolicyService.createOrUpdateAccountPolicy(request));
     }
 
-    /**
-     * Find account policy by target account ID and pool ID
-     * @param targetId userId {@link String}
-     * @return DTO of account policy
-     */
-    @GetMapping("/get/{id}")
-    public JsonResponse<AccountPolicyDTO> getAccountPolicyByTargetId(@PathVariable("id") String targetId) {
-        return JsonResponse.success(accountPolicyService.getAccountPolicyByTargetId(targetId));
+    @GetMapping("/get-by-acc-id/{acc-id}")
+    public JsonResponse<AccountPolicyDTO> getAccountPolicyByAccId(@PathVariable("acc-id") String accId) {
+        return JsonResponse.success(accountPolicyService.getAccountPolicyByTargetId(accId));
     }
-
 }

@@ -1,10 +1,7 @@
 package com.project.q_authent.controllers;
 
 import com.project.q_authent.dtos.AccountDTO;
-import com.project.q_authent.requests.account.ChangePasswordRequest;
-import com.project.q_authent.requests.account.CreateSubUserRequest;
-import com.project.q_authent.requests.account.ForgotPasswordRequest;
-import com.project.q_authent.requests.account.ValidateCodeRequest;
+import com.project.q_authent.requests.account.*;
 import com.project.q_authent.responses.JsonResponse;
 import com.project.q_authent.services.account_service.AccountService;
 import jakarta.mail.MessagingException;
@@ -108,6 +105,16 @@ public class AccountController {
 
     @GetMapping("/get-root")
     public JsonResponse<AccountDTO> getRootAccount() {
-        return  JsonResponse.success(accountService.getRootAccount());
+        return JsonResponse.success(accountService.getRootAccount());
+    }
+
+    /**
+     * Logical delete accounts by ID
+     * @param request {@link DeleteAccountsRequest}
+     * @return "OK" if success
+     */
+    @PostMapping("/logical-delete")
+    public JsonResponse<String> logicalDeleteAccounts(@RequestBody DeleteAccountsRequest request) {
+        return JsonResponse.success(accountService.logicalDeleteAccounts(request.getAccountIds(), request.getIsDeleteSubAccounts()));
     }
 }

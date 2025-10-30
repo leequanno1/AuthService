@@ -112,4 +112,9 @@ public class UserPoolController {
     public JsonResponse<UserPoolDTOFull> getPoolDetail(@PathVariable("poolId") String poolId) throws Exception {
         return JsonResponse.success(userPoolService.getPoolDetail(poolId));
     }
+
+    @GetMapping("/get-attached-by-acc-id/{acc-id}")
+    public JsonResponse<List<UserPoolDTOFull>> getByAttachedByAccID(@PathVariable("acc-id") String accID) throws Exception {
+        return JsonResponse.success(userPoolService.getByAttachedByAccID(accID));
+    }
 }

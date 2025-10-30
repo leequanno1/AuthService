@@ -52,4 +52,16 @@ public class UserPoolPolicyController {
         return JsonResponse.success(userPoolPolicyService.getPolicyByTargetId(targetId));
     }
 
+    @PostMapping("/delete/{policy-id}")
+    public  JsonResponse<String> deletePolicy(@PathVariable("policy-id") String policyId) {
+
+        return  JsonResponse.success(userPoolPolicyService.deletePolicy(policyId));
+    }
+
+    @PostMapping("/delete-many")
+    public  JsonResponse<String> deletePolicyMany(@RequestBody List<String> policyIds) {
+
+        return  JsonResponse.success(userPoolPolicyService.deletePolicyMany(policyIds));
+    }
+
 }

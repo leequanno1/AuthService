@@ -278,4 +278,42 @@ public class AccountService {
         }
         return rootAccount;
     }
+
+    /**
+     * Logical delete accounts by ID
+     * @param accountIds {@link List} account ID
+     * @param isDeleteSubAccounts {@link Boolean} true if want to logical delete all child's sub-accounts
+     * @return "OK" if success
+     */
+    @Transactional
+    public String logicalDeleteAccounts(List<String> accountIds, Boolean isDeleteSubAccounts) {
+
+        String prAccountID = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account prAccount = accountRepository.findById(prAccountID)
+                .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        // Get all sub-accounts
+        List<Account> subAccounts = accountRepository.findAllById(accountIds);
+        for (Account subAccount : subAccounts) {
+            if (Objects.isNull(subAccount.getParentId()) || !prAccount.getAccountId().equals(subAccount.getParentId())) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+            subAccount.setDelFlag(true);
+        }
+        accountRepository.saveAll(subAccounts);
+        if (isDeleteSubAccounts) {
+            subAccounts =  accountRepository.findAllByParentIdInAndDelFlag(subAccounts.stream().map(Account::getAccountId).collect(Collectors.toList()),false);
+            while (!Objects.isNull(subAccounts) &&  !subAccounts.isEmpty()) {
+                // logical delete
+                for (Account subAccount : subAccounts) {
+                    subAccount.setDelFlag(true);
+                }
+                accountRepository.saveAll(subAccounts);
+                // find lower sub-accounts
+                subAccounts =  accountRepository.findAllByParentIdInAndDelFlag(subAccounts.stream().map(Account::getAccountId).collect(Collectors.toList()), false);
+            }
+        }
+
+        return "OK";
+    }
 }
