@@ -153,4 +153,24 @@ public class SecurityService {
 
         return new TokenResponse(refreshToken,accessToken);
     }
+
+    public TokenResponse subLogin(String rootId, String username, String password) {
+
+        accountRepository.findById(rootId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        // find all account have root ID with username, password, not deleted
+        Account account = accountRepository
+                .findByRootIdAndUsernameAndDelFlag(rootId, username, Boolean.FALSE)
+                .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(password, account.getPassword())) {
+            throw new BadException(ErrorCode.WRONG_PASSWORD);
+        }
+
+        // sign token and response
+        String accessToken = jwtService.generateAccessToken(account);
+        String refreshToken = jwtService.generateRefreshToken(account);
+
+        return new TokenResponse(refreshToken,accessToken);
+    }
 }

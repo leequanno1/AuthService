@@ -183,7 +183,7 @@ public class AccountService {
                 .displayName(username)
                 .password(passwordEncoder.encode(password))
                 .email(email)
-                .active(false)
+                .active(true)
                 .parentId(accountId)
                 .rootId(rootId)
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
@@ -197,9 +197,9 @@ public class AccountService {
     }
 
     /**
-     * Show all sub-accounts of a parent account's ID.
+     * Show all subaccounts of a parent account's ID.
      * First check current account is equal or higher level than the target parent.
-     * Then show all sub accounts
+     * Then show all subaccounts
      * @param parentId {@link String}
      * @return {@link List} of {@link AccountDTO}
      */
@@ -231,7 +231,7 @@ public class AccountService {
             throw new BadException(ErrorCode.UNAUTHORIZED);
         }
 
-        // find all sub-account
+        // find all subaccount
         List<Account> subAccounts = accountRepository.findAllByParentIdAndDelFlag(parentId,false);
         return subAccounts.stream().map(AccountDTO::new).collect(Collectors.toList());
     }
@@ -241,7 +241,7 @@ public class AccountService {
      * @param rootId rootID
      * @param email email
      * @param username username
-     * @return OK if have no account in root ID have email and username
+     * @return OK if there have no account in root ID have email and username
      */
     public String checkAccountExists(String rootId, String email, String username) {
 
@@ -282,7 +282,7 @@ public class AccountService {
     /**
      * Logical delete accounts by ID
      * @param accountIds {@link List} account ID
-     * @param isDeleteSubAccounts {@link Boolean} true if want to logical delete all child's sub-accounts
+     * @param isDeleteSubAccounts {@link Boolean} true if they want to logical delete all child's subaccounts
      * @return "OK" if success
      */
     @Transactional
@@ -292,7 +292,7 @@ public class AccountService {
         Account prAccount = accountRepository.findById(prAccountID)
                 .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
 
-        // Get all sub-accounts
+        // Get all subaccounts
         List<Account> subAccounts = accountRepository.findAllById(accountIds);
         for (Account subAccount : subAccounts) {
             if (Objects.isNull(subAccount.getParentId()) || !prAccount.getAccountId().equals(subAccount.getParentId())) {
@@ -309,11 +309,89 @@ public class AccountService {
                     subAccount.setDelFlag(true);
                 }
                 accountRepository.saveAll(subAccounts);
-                // find lower sub-accounts
+                // find lower subaccounts
                 subAccounts =  accountRepository.findAllByParentIdInAndDelFlag(subAccounts.stream().map(Account::getAccountId).collect(Collectors.toList()), false);
             }
         }
 
+        return "OK";
+    }
+
+    /**
+     * Get account by account id
+     * @param accountId string
+     * @return {@link AccountDTO}
+     */
+    public AccountDTO getAccountById(String accountId) {
+
+        String requestAccID = SecurityUtils.getCurrentUserId();
+        if (!isParentOrHigher(accountId, requestAccID)) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        return new AccountDTO(account);
+    }
+
+    /**
+     * Check a higherID account is parent or higher lvl than the lower account
+     * @param lowerID {@link String} ID
+     * @param higherID {@link String} ID
+     * @return return true if higherID is actually higher, otherwise false
+     */
+    public boolean isParentOrHigher(String lowerID, String higherID) {
+        Account lowerAccount = accountRepository.findById(lowerID).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        // check if lw acc is root then return false
+        if (Objects.isNull(lowerAccount.getRootId())) {
+            return false;
+        }
+
+        Account higherAccount = accountRepository.findById(higherID).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        while (!Objects.isNull(lowerAccount.getRootId())) {
+            if(lowerAccount.getParentId().equals(higherAccount.getAccountId()) || lowerAccount.getRootId().equals(higherAccount.getAccountId())) {
+                return true;
+            } else {
+                lowerAccount = accountRepository.findById(lowerAccount.getParentId()).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Toggle account status by accountID and new status
+     * @param accountId account ID
+     * @param accStatus account status
+     * @return OK
+     */
+    public String toggleStatus(String accountId, Boolean accStatus) {
+        // check authority
+        String crrAccountId = SecurityUtils.getCurrentUserId();
+        if(!isParentOrHigher(accountId, crrAccountId)) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        account.setActive(accStatus);
+        accountRepository.save(account);
+        return "OK";
+    }
+
+    /**
+     * Reset subaccount password
+     * @param targetAccountId subaccount ID
+     * @param newPassword new password
+     * @return OK
+     */
+    public String resetSubAccountPassword(String targetAccountId, String newPassword) {
+        String crrAccountId = SecurityUtils.getCurrentUserId();
+        if(!isParentOrHigher(targetAccountId, crrAccountId)) {
+            throw new BadException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Account account = accountRepository.findById(targetAccountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+        account.setPassword(passwordEncoder.encode(newPassword));
+        accountRepository.save(account);
         return "OK";
     }
 }

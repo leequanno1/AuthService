@@ -15,6 +15,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class LoginRequest {
+    private String rootId;
     private String username;
     private String password;
 }

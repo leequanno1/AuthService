@@ -63,6 +63,11 @@ public class AccountController {
         return JsonResponse.success(accountService.changePassword(request.getOldPassword(), request.getNewPassword()));
     }
 
+    @PostMapping("/reset-subaccount-password")
+    public JsonResponse<String> resetSubAccountPassword(@RequestBody ResetSubAccPasswordRequest request){
+
+        return JsonResponse.success(accountService.resetSubAccountPassword(request.getTargetAccountId(), request.getNewPassword()));
+    }
     /**
      * Create subuser by using root account
      * @param request include username, password, email {@link String}
@@ -116,5 +121,17 @@ public class AccountController {
     @PostMapping("/logical-delete")
     public JsonResponse<String> logicalDeleteAccounts(@RequestBody DeleteAccountsRequest request) {
         return JsonResponse.success(accountService.logicalDeleteAccounts(request.getAccountIds(), request.getIsDeleteSubAccounts()));
+    }
+
+    @GetMapping("/get-by-id/{account-id}")
+    public JsonResponse<AccountDTO> getAccountById(@PathVariable("account-id") String accountId) {
+
+        return JsonResponse.success(accountService.getAccountById(accountId));
+    }
+
+    @PostMapping("/toggle-status/{account-id}/{acc-status}")
+    public JsonResponse<String> toggleStatus (@PathVariable("account-id") String accountId, @PathVariable("acc-status") Boolean accStatus) {
+
+        return JsonResponse.success(accountService.toggleStatus(accountId, accStatus));
     }
 }

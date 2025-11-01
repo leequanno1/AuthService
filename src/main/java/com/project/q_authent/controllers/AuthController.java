@@ -45,6 +45,11 @@ public class AuthController {
         return JsonResponse.success(securityService.login(request.getUsername(), request.getPassword()));
     }
 
+    @PostMapping("/sub-login")
+    public JsonResponse<TokenResponse> subLogin(@RequestBody LoginRequest request) {
+        return JsonResponse.success(securityService.subLogin(request.getRootId(), request.getUsername(), request.getPassword()));
+    }
+
     /**
      * Refresh to get new access token and refresh token
      * @param request {@link RefreshTokenRequest}

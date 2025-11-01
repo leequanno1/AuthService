@@ -36,6 +36,8 @@ public enum ErrorCode {
 
     INVALID_PASSWORD(10011, "Invalid password", HttpStatus.BAD_REQUEST),
 
+    GROUP_NOT_FOUND(10012, "Group not found", HttpStatus.BAD_REQUEST),
+
     // Code 2*** : UserPool
     FIELD_NEEDED(2000, "Email verify cant turn on", HttpStatus.BAD_REQUEST),
 

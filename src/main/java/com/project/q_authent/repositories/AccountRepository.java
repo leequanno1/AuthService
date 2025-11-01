@@ -51,5 +51,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     List<Account> findAllByParentIdIn(Collection<String> parentIds);
 
     List<Account> findAllByParentIdInAndDelFlag(Collection<String> parentIds, Boolean delFlag);
+
+    Optional<Account> findByRootIdAndUsernameAndDelFlag(String rootId, String username, Boolean aFalse);
 }
 
