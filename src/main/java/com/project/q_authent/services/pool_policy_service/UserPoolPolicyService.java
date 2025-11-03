@@ -112,7 +112,7 @@ public class UserPoolPolicyService {
     public UserPoolPolicyDTO getPolicyByTargetId(String targetId, String poolId) {
 
         UserPoolPolicy userPoolPolicy = userPoolPolicyRepository
-                .findByAccount_AccountIdAndUserPool_PoolId(targetId, poolId)
+                .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(targetId, poolId, false)
                 .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
 
         return new UserPoolPolicyDTO(userPoolPolicy);

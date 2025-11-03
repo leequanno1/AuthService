@@ -46,6 +46,10 @@ public class UserPoolDTOFull {
 
     private List<String> roleLevels;
 
+    private Integer accessExpiredMinutes;
+
+    private Integer refreshExpiredDays;
+
     public UserPoolDTOFull(UserPool userPool, AESGCMUtils aesgcmUtils) throws Exception {
         this.poolId = userPool.getPoolId();
         this.accountId = userPool.getAccount().getAccountId();
@@ -57,6 +61,8 @@ public class UserPoolDTOFull {
         this.delFlag = userPool.getDelFlag();
         this.poolName = userPool.getPoolName();
         this.emailVerify = userPool.getEmailVerify();
-        this.roleLevels = JsonUtils.fromJson(userPool.getRoleLevels());                     // transform to list
+        this.roleLevels = JsonUtils.fromJson(userPool.getRoleLevels());
+        this.accessExpiredMinutes = userPool.getAccessExpiredMinutes();
+        this.refreshExpiredDays = userPool.getRefreshExpiredDays();
     }
 }

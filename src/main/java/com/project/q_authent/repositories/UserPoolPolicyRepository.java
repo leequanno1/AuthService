@@ -10,11 +10,11 @@ import java.util.Optional;
 @Repository
 public interface UserPoolPolicyRepository extends JpaRepository<UserPoolPolicy,String> {
 
-    Optional<UserPoolPolicy> findByAccount_AccountIdAndUserPool_PoolId(String accountAccountId, String userPoolPoolId);
-
     Optional<List<UserPoolPolicy>> findAllByAccount_AccountId(String accountAccountId);
 
     Optional<List<UserPoolPolicy>> findAllByCreator_AccountIdAndUserPool_PoolId(String creatorAccountId, String userPoolPoolId);
 
     List<UserPoolPolicy> findAllByAccount_AccountIdAndDelFlag(String accountAccountId, Boolean delFlag);
+
+    Optional<UserPoolPolicy> findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(String accountAccountId, String userPoolPoolId, Boolean delFlag);
 }

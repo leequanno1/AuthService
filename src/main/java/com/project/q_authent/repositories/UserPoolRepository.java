@@ -21,4 +21,5 @@ public interface UserPoolRepository extends JpaRepository<UserPool, String> {
 
     List<UserPool> findAllByPoolIdIsIn(Collection<String> poolIds);
 
+    Optional<UserPool> findUserPoolByAccount_AccountIdAndPoolNameAndDelFlag(String accountAccountId, String poolName, Boolean delFlag);
 }

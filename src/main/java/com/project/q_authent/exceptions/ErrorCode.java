@@ -32,11 +32,11 @@ public enum ErrorCode {
 
     VALIDATION_CODE_NOT_FOUND(1009, "Validation code not found", HttpStatus.NOT_FOUND),
 
-    VALIDATION_CODE_EXPIRED(10010, "Validation code expired", HttpStatus.BAD_REQUEST),
+    VALIDATION_CODE_EXPIRED(1010, "Validation code expired", HttpStatus.BAD_REQUEST),
 
-    INVALID_PASSWORD(10011, "Invalid password", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD(1011, "Invalid password", HttpStatus.BAD_REQUEST),
 
-    GROUP_NOT_FOUND(10012, "Group not found", HttpStatus.BAD_REQUEST),
+    GROUP_NOT_FOUND(1012, "Group not found", HttpStatus.BAD_REQUEST),
 
     // Code 2*** : UserPool
     FIELD_NEEDED(2000, "Email verify cant turn on", HttpStatus.BAD_REQUEST),

@@ -140,7 +140,7 @@ public class AccountService {
                 .findById(accountId)
                 .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
 
-        if (account.getPassword().equals(passwordEncoder.encode(oldPassword))) {
+        if (passwordEncoder.matches(oldPassword, account.getPassword())) {
             account.setPassword(passwordEncoder.encode(newPassword));
             accountRepository.save(account);
         } else {
@@ -391,6 +391,16 @@ public class AccountService {
 
         Account account = accountRepository.findById(targetAccountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
         account.setPassword(passwordEncoder.encode(newPassword));
+        accountRepository.save(account);
+        return "OK";
+    }
+
+    public String updateDisplayName(String displayName) {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        account.setDisplayName(displayName);
         accountRepository.save(account);
         return "OK";
     }

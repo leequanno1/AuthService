@@ -187,11 +187,29 @@ public class UserPoolService {
 
     public String advanceUpdateUserPool(UserPoolRequest request) {
 
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
         // find pool with id
         UserPool userPool = userPoolRepository
                 .findById(request.getPoolId())
                 .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
         // TODO: check policy, or is root to verify user can edit
+        // check root
+        if (!Objects.isNull(account.getRootId())) {
+            // check policy
+            UserPoolPolicy plc = userPoolPolicyRepository
+                    .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(accountId, request.getPoolId(), false)
+                    .orElseThrow(() -> new BadException(ErrorCode.POLICY_NOT_FOUND));
+            if (!plc.getCanEdit()) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+        // check name duplicate
+        UserPool checkedPool = userPoolRepository.findUserPoolByAccount_AccountIdAndPoolNameAndDelFlag(userPool.getAccount().getAccountId(), request.getPoolName(), false).orElse(null);
+        if (!Objects.isNull(checkedPool) && !checkedPool.getPoolId().equals(request.getPoolId())) {
+            throw new BadException(ErrorCode.POOL_NAME_EXISTED);
+        }
+
         // set pool properties
         userPool.setUserFields(JsonUtils.toJson(request.getUserFields()));
         userPool.setAuthorizeFields(JsonUtils.toJson(request.getAuthorizeFields()));

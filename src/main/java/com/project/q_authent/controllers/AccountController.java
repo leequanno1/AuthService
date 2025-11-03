@@ -134,4 +134,10 @@ public class AccountController {
 
         return JsonResponse.success(accountService.toggleStatus(accountId, accStatus));
     }
+
+    @PostMapping("/update-display-name/{display-name}")
+    public JsonResponse<String> updateDisplayName(@PathVariable("display-name") String displayName) {
+
+        return JsonResponse.success(accountService.updateDisplayName(displayName));
+    }
 }
