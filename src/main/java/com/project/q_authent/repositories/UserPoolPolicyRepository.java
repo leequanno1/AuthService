@@ -17,4 +17,6 @@ public interface UserPoolPolicyRepository extends JpaRepository<UserPoolPolicy,S
     List<UserPoolPolicy> findAllByAccount_AccountIdAndDelFlag(String accountAccountId, Boolean delFlag);
 
     Optional<UserPoolPolicy> findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(String accountAccountId, String userPoolPoolId, Boolean delFlag);
+
+    void deleteByUserPool_PoolId(String userPoolPoolId);
 }

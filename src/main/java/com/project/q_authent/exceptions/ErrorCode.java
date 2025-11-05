@@ -46,7 +46,46 @@ public enum ErrorCode {
     POOL_NAME_EXISTED(2002, "User pool name existed", HttpStatus.BAD_REQUEST ),
 
     // Code 3*** : Policy
-    POLICY_NOT_FOUND(3000, "Policy is not found", HttpStatus.NOT_FOUND);
+    POLICY_NOT_FOUND(3000, "Policy is not found", HttpStatus.NOT_FOUND),
+
+    // Code 4*** : Authify Service
+    POOL_KEY_MISSING(4000, "Pool key is missing", HttpStatus.UNAUTHORIZED),
+
+    POOL_KEY_INVALID(4001, "Pool key is invalid", HttpStatus.BAD_REQUEST),
+
+    ATF_USERNAME_EXISTED(4002, "Username existed in pool", HttpStatus.BAD_REQUEST),
+
+    ATF_EMAIL_EXISTED(4003, "Email existed in pool", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_WRONG_USERNAME(4004, "Security. Wrong username", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_WRONG_PASSWORD(4005, "Security. Wrong password", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_WRONG_OPTIONAL(4006, "Security. Wrong optional", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_USERNAME_MISSING(4007, "Missing username", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_PASSWORD_MISSING(4008, "Missing password", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_OPTIONAL_MISSING(4009, "Missing optional", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_NO_AUTHORIZATION_HEADER(4010, "No Authorization header", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_INVALID_AUTHORIZATION_HEADER(4010, "Invalid Authorization header", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_NO_REFRESH_TOKEN(4011, "No refresh token", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_INVALID_REFRESH_TOKEN(4012, "Invalid refresh token", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_ACCESS_EXPIRED(4013, "Access token expired", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_REFRESH_EXPIRED(4014, "Refresh token expired", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_MISSING_KEY(4015, "Missing key", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_ACTIVE_NO_MATCH(4016, "Active code no match", HttpStatus.UNAUTHORIZED),
+
+    ;
 
     private final int code;
     private final String message;

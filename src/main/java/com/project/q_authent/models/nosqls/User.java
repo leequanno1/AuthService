@@ -48,7 +48,6 @@ public class User {
 
     private Boolean gender;
 
-    private String roleLevel;
     @Builder.Default
     private Boolean isValidated = false;
     @Indexed

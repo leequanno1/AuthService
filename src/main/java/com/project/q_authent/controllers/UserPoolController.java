@@ -1,6 +1,7 @@
 package com.project.q_authent.controllers;
 
 import com.project.q_authent.dtos.UserPoolDTOFull;
+import com.project.q_authent.dtos.authify.UserDTO;
 import com.project.q_authent.requests.userpools.UserPoolRequest;
 import com.project.q_authent.responses.JsonResponse;
 import com.project.q_authent.constances.AuthField;
@@ -114,7 +115,13 @@ public class UserPoolController {
     }
 
     @GetMapping("/get-attached-by-acc-id/{acc-id}")
-    public JsonResponse<List<UserPoolDTOFull>> getByAttachedByAccID(@PathVariable("acc-id") String accID) throws Exception {
+    public JsonResponse<List<UserPoolDTOFull>> getByAttachedByAccID(@PathVariable("acc-id") String accID) {
         return JsonResponse.success(userPoolService.getByAttachedByAccID(accID));
+    }
+
+    @GetMapping("/all-users/{pool-id}")
+    public JsonResponse<List<UserDTO>> getAllUsers(@PathVariable("pool-id") String poolId) throws Exception {
+
+        return JsonResponse.success(userPoolService.getAllUsers(poolId));
     }
 }

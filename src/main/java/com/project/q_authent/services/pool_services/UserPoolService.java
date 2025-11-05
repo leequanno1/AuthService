@@ -3,8 +3,10 @@ package com.project.q_authent.services.pool_services;
 import com.project.q_authent.constances.AuthField;
 import com.project.q_authent.constances.TableIdHeader;
 import com.project.q_authent.dtos.UserPoolDTOFull;
+import com.project.q_authent.dtos.authify.UserDTO;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
+import com.project.q_authent.models.nosqls.User;
 import com.project.q_authent.models.sqls.Account;
 import com.project.q_authent.models.sqls.UserPool;
 import com.project.q_authent.models.sqls.UserPoolPolicy;
@@ -58,7 +60,7 @@ public class UserPoolService {
                 () -> new BadException(ErrorCode.USER_NOT_FOUND)
         );
         // Check if any pool has the same name
-        if (!userPoolRepository.findAllByAccountAndPoolName(account, request.getPoolName()).isEmpty()) {
+        if (!userPoolRepository.findAllByAccountAndPoolNameAndDelFlag(account, request.getPoolName(), Boolean.FALSE).isEmpty()) {
             throw new BadException(ErrorCode.POOL_NAME_EXISTED);
         }
         String newPoolID = IDUtil.getID(TableIdHeader.USER_POOL_HEADER);
@@ -67,7 +69,7 @@ public class UserPoolService {
                 .account(account)
                 .userFields(JsonUtils.toJson(request.getUserFields()))
                 .authorizeFields(JsonUtils.toJson(request.getAuthorizeFields()))
-                .poolKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(128))) //encrypt key
+                .poolKey(RandomKeyGenerator.generateKeyBase64(128)) //encrypt key
                 .privateAccessKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(512))) //encrypt key
                 .privateRefreshKey(aesgcmUtils.encrypt(RandomKeyGenerator.generateKeyBase64(512))) //encrypt key
                 .poolName(request.getPoolName())
@@ -102,6 +104,7 @@ public class UserPoolService {
                 userPool.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
                 userPoolRepository.save(userPool);
             }
+            userPoolPolicyRepository.deleteByUserPool_PoolId(userPool.getPoolId());
         } else {
             throw new BadException(ErrorCode.UNAUTHORIZED);
         }
@@ -238,6 +241,8 @@ public class UserPoolService {
                     userPool.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
                     userPoolRepository.save(userPool);
                 }
+                // delete referent policy
+                userPoolPolicyRepository.deleteByUserPool_PoolId(userPool.getPoolId());
             } else {
                 throw new BadException(ErrorCode.UNAUTHORIZED);
             }
@@ -265,5 +270,32 @@ public class UserPoolService {
                 throw new RuntimeException(e);
             }
         }).toList();
+    }
+
+    /**
+     * Get all users by poolId.
+     * Check user is root or have authority to manage pool, otherwise throw.
+     * @param poolId {@link String}
+     * @return List UserDTO
+     */
+    public List<UserDTO> getAllUsers(String poolId) {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account crAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        // not root account
+        if (Objects.isNull(crAccount.getRootId())) {
+            // get policy to check authority
+            UserPoolPolicy poolPolicy = userPoolPolicyRepository
+                    .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(crAccount.getAccountId(), poolId, Boolean.FALSE)
+                    .orElse(null);
+            if (Objects.isNull(poolPolicy) || !poolPolicy.getCanManage()) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        List<User> users = userRepository.findAllByPoolIdAndDelFlag(poolId, Boolean.FALSE);
+
+        return users.stream().map(UserDTO::new).toList();
     }
 }
