@@ -284,7 +284,7 @@ public class UserPoolService {
         Account crAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
 
         // not root account
-        if (Objects.isNull(crAccount.getRootId())) {
+        if (!Objects.isNull(crAccount.getRootId())) {
             // get policy to check authority
             UserPoolPolicy poolPolicy = userPoolPolicyRepository
                     .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(crAccount.getAccountId(), poolId, Boolean.FALSE)
@@ -297,5 +297,34 @@ public class UserPoolService {
         List<User> users = userRepository.findAllByPoolIdAndDelFlag(poolId, Boolean.FALSE);
 
         return users.stream().map(UserDTO::new).toList();
+    }
+
+    public List<String> getUserFields(String poolId) {
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account crAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        // not root account
+        if (!Objects.isNull(crAccount.getRootId())) {
+            // get policy to check authority
+            UserPoolPolicy poolPolicy = userPoolPolicyRepository
+                    .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(crAccount.getAccountId(), poolId, Boolean.FALSE)
+                    .orElse(null);
+            if (Objects.isNull(poolPolicy) || !poolPolicy.getCanManage()) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        UserPool userPool = userPoolRepository.findById(poolId).orElseThrow(
+                () -> new BadException(ErrorCode.USER_NOT_FOUND)
+        );
+
+        List<String> userFiles = JsonUtils.fromJson(userPool.getUserFields());
+        userFiles.remove("password");
+        userFiles.add(0, "userId");
+        userFiles.add("isValidated");
+        userFiles.add("createdAt");
+        userFiles.add("updatedAt");
+
+        return userFiles;
     }
 }

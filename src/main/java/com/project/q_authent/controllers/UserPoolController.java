@@ -124,4 +124,10 @@ public class UserPoolController {
 
         return JsonResponse.success(userPoolService.getAllUsers(poolId));
     }
+
+    @GetMapping("/user-fields/{pool-id}")
+    public JsonResponse<List<String>> getUserFields(@PathVariable("pool-id") String poolId) throws Exception {
+
+        return JsonResponse.success(userPoolService.getUserFields(poolId));
+    }
 }

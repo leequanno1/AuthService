@@ -53,7 +53,7 @@ public class User {
     @Indexed
     private String poolId;
     @Builder.Default
-    private Timestamp createdAtTimestamp = Timestamp.valueOf(LocalDateTime.now());
+    private Timestamp createdAt = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
     private Timestamp updatedAt = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
