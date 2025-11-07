@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonUtils {
 
+    private static final ObjectMapper mapper = new ObjectMapper();
     /**
      * Convert object to json String
      * @param obj {@link Object}
@@ -39,6 +40,14 @@ public class JsonUtils {
             TypeReference<T> typeRef = new TypeReference<>() {};
             ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(json, typeRef);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert JSON to object", e);
+        }
+    }
+
+    public static <T> T fromJson(String json, Class<T> clazz) {
+        try {
+            return mapper.readValue(json, clazz);
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert JSON to object", e);
         }

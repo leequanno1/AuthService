@@ -14,7 +14,7 @@ public interface UserRepository extends MongoRepository<User,String> {
 
     List<User> findAllByPoolIdAndUsernameAndDelFlagAndIsValidated(String poolId, String username, Boolean delFlag, Boolean isValidated);
 
-    List<User> findAllByPoolIdAndEmailAndDelFlag(String poolId, String email, Boolean delFlag);
+    List<User> findAllByPoolIdAndEmailAndDelFlagAndIsValidated(String poolId, String email, Boolean delFlag, Boolean isValidated);
 
     Optional<User> findUserByPoolIdAndUsernameAndIsValidatedAndDelFlag(String poolId, String username, Boolean isValidated, Boolean delFlag);
 

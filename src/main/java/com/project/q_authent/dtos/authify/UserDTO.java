@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Getter
 @Setter
 @Data
@@ -34,6 +36,12 @@ public class UserDTO {
 
     private Boolean delFlag;
 
+    private Date createdAt;
+
+    private Date updatedAt;
+
+    private Boolean isValidated;
+
     public UserDTO(User user) {
         this.userId = user.getUserId();
         this.username = user.getUsername();
@@ -47,6 +55,9 @@ public class UserDTO {
         this.displayName = user.getDisplayName();
         this.gender = user.getGender();
         this.delFlag = user.getDelFlag();
+        this.createdAt = user.getCreatedAt();
+        this.updatedAt = user.getUpdatedAt();
+        this.isValidated = user.getIsValidated();
     }
 
 }

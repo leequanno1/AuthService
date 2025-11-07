@@ -59,7 +59,7 @@ public class AuthifyJwtService {
      */
     public User extractUser(String token, String accessKey) {
         String userJson = extractClaim(token, Claims::getSubject, accessKey);
-        return JsonUtils.fromJson(userJson);
+        return JsonUtils.fromJson(userJson, User.class);
     }
 
 

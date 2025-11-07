@@ -11,5 +11,10 @@ import java.util.Optional;
 public interface ServiceActiveCodeRepository extends MongoRepository<ActiveCode,String> {
     Optional<ActiveCode> findByUserId(String userId);
 
-    List<ActiveCode> findAllByUserId(String userId);
+    List<ActiveCode> findAllByUserPoolIdAndEmailAndType(String userPoolId, String email, Integer type);
+    Optional<ActiveCode> findByUserPoolIdAndEmailAndType(String userPoolId, String email, Integer type);
+    List<ActiveCode> findAllByUserIdAndType(String userId, Integer type);
+    Optional<ActiveCode> findByUserIdAndType(String userId, Integer type);
+
+    void deleteAllByUserIdAndType(String userId, Integer type);
 }

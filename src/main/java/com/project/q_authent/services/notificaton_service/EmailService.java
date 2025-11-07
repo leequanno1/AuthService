@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,6 +26,7 @@ public class EmailService {
      * @param isHtml if content is html document so this value is true, otherwise false
      * @throws MessagingException ex
      */
+    @Async
     public void sendEmail(String to, String subject, String content, Boolean isHtml) throws MessagingException {
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -39,6 +41,7 @@ public class EmailService {
         mailSender.send(mimeMessage);
     }
 
+    @Async
     public void sendValidationCode(String to, Integer code) throws MessagingException {
         sendEmail(to, "", code.toString(), false);
     }

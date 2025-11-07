@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
@@ -53,9 +54,9 @@ public class User {
     @Indexed
     private String poolId;
     @Builder.Default
-    private Timestamp createdAt = Timestamp.valueOf(LocalDateTime.now());
+    private Date createdAt = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
-    private Timestamp updatedAt = Timestamp.valueOf(LocalDateTime.now());
+    private Date updatedAt = Timestamp.valueOf(LocalDateTime.now());
     @Builder.Default
     private Boolean delFlag = false;
 }

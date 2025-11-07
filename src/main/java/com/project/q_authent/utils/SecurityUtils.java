@@ -52,7 +52,7 @@ public class SecurityUtils {
     }
 
     public static String getPoolKeyHeader() {
-        return getRequestHeader("Pool-Key");
+        return getRequestHeader("ATF-Pool-Key");
     }
 
     public static String getAuthorizationHeader() {
@@ -82,8 +82,12 @@ public class SecurityUtils {
         return null;
     }
 
-    public static final String COOKIE_REFRESH_TOKEN = "refresh_token";
+    public static final String COOKIE_REFRESH_TOKEN = "ATF_refresh_token";
 
-    public static final String COOKIE_NEED_ACTIVE_ID = "need_active_id";
+    public static final String COOKIE_NEED_ACTIVE_ID = "ATF_need_active_id";
+
+    public static final String COOKIE_NEED_RESET_ID = "ATF_need_reset_id";
+
+    public static final String COOKIE_RESET_CODE_ID = "ATF_reset_code_id";
 
 }

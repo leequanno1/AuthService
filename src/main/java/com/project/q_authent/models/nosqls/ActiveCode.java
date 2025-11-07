@@ -11,6 +11,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Date;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,5 +29,16 @@ public class ActiveCode {
     @Indexed
     private String userId;
 
+    @Indexed
+    private String email;
+
     private String code;
+
+    private Integer type;
+
+    @Indexed
+    private String userPoolId;
+
+    @Builder.Default
+    private Date expiredDate = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
 }

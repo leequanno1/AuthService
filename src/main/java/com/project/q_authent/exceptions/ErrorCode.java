@@ -83,7 +83,11 @@ public enum ErrorCode {
 
     ATF_AUTH_MISSING_KEY(4015, "Missing key", HttpStatus.BAD_REQUEST),
 
-    ATF_AUTH_ACTIVE_NO_MATCH(4016, "Active code no match", HttpStatus.UNAUTHORIZED),
+    ATF_AUTH_CODE_NO_MATCH(4016, "Code no match", HttpStatus.UNAUTHORIZED),
+
+    ATF_AUTH_EMAIL_MISSING(4017, "Missing email", HttpStatus.BAD_REQUEST),
+
+    ATF_AUTH_EXPIRED_CODE(4018, "Expired code", HttpStatus.BAD_REQUEST),
 
     ;
 
