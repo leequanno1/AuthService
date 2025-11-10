@@ -2,6 +2,7 @@ package com.project.q_authent.services.authify_services;
 
 import com.project.q_authent.constances.ActiveCodeType;
 import com.project.q_authent.constances.TableIdHeader;
+import com.project.q_authent.dtos.authify.UserDTO;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
 import com.project.q_authent.models.nosqls.ActiveCode;
@@ -11,14 +12,14 @@ import com.project.q_authent.repositories.ServiceActiveCodeRepository;
 import com.project.q_authent.repositories.UserPoolRepository;
 import com.project.q_authent.repositories.UserRepository;
 import com.project.q_authent.requests.authify.AuthifyNMAuthRequest;
+import com.project.q_authent.requests.authify.UpdateUserRequest;
+import com.project.q_authent.responses.authify.AuthifyTokenResponse;
+import com.project.q_authent.responses.authify.NeedCodeValidateResponse;
 import com.project.q_authent.services.notificaton_service.EmailService;
 import com.project.q_authent.utils.*;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,13 +49,15 @@ public class AuthifySecurityService {
      * @return OK if success
      */
     @Transactional
-    public String normalSignUp(AuthifyNMAuthRequest request, HttpServletResponse response) throws Exception {
+    public NeedCodeValidateResponse normalSignUp(AuthifyNMAuthRequest request) throws Exception {
 
         UserPool userPool = handleGetUserPool();
-
         List<String> userFields = JsonUtils.fromJson(userPool.getUserFields());
+        List<String> userAuthFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
+        Boolean needActiveAccount = Boolean.FALSE;
+
         // check existed email in pool, username
-        invalidNMAuthRequestThrow(request, userFields);
+        invalidNMAuthRequestThrow(request, userAuthFields);
         if(!userRepository.findAllByPoolIdAndUsernameAndDelFlagAndIsValidated(userPool.getPoolId(), request.getUsername(), Boolean.FALSE, Boolean.TRUE).isEmpty()) {
             throw new BadException(ErrorCode.ATF_USERNAME_EXISTED);
         }
@@ -89,7 +92,7 @@ public class AuthifySecurityService {
                     .build();
             serviceActiveCodeRepository.save(activeCode);
             emailService.sendValidationCode(user.getEmail(), validateCode);
-            response.addCookie(getSecuredCookie(SecurityUtils.COOKIE_NEED_ACTIVE_ID, user.getUserId(), 10 * 60)); // 10 minutes
+            needActiveAccount = Boolean.TRUE;
         }
 
         // delete all no activated
@@ -100,7 +103,10 @@ public class AuthifySecurityService {
 
         userRepository.save(user);
 
-        return "OK";
+        return NeedCodeValidateResponse.builder()
+                .needActive(needActiveAccount)
+                .userId(user.getUserId())
+                .build();
     }
 
     /**
@@ -108,14 +114,13 @@ public class AuthifySecurityService {
      * First, delete all last active codes with the same mail.
      * Second, create a new code and save to DB
      * Third, send to registered email
-     * @param servletRequest {@link HttpServletRequest}
+     * @param userId {@link String}
      * @return OK if not exception throw
      * @throws MessagingException || ATF_AUTH_MISSING_KEY || ATF_AUTH_USERNAME_MISSING
      */
-    public String resendActiveCode(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws Exception {
+    public NeedCodeValidateResponse resendActiveCode(String userId) throws Exception {
         // TODO: implement resend code logic
         // get userID from cookie
-        String userId = SecurityUtils.getCookieValue(servletRequest, SecurityUtils.COOKIE_NEED_ACTIVE_ID);
         if (Objects.isNull(userId)) {
             throw new BadException(ErrorCode.ATF_AUTH_MISSING_KEY);
         }
@@ -135,12 +140,14 @@ public class AuthifySecurityService {
                 .userPoolId(handleGetUserPool().getPoolId())
                 .type(ActiveCodeType.ACTIVE_ACCOUNT)
                 .build();
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_NEED_ACTIVE_ID, user.getUserId(), 10 * 60)); // 10 minutes
 
         serviceActiveCodeRepository.save(activeCode);
         emailService.sendValidationCode(user.getEmail(), codeValue);
 
-        return "OK";
+        return NeedCodeValidateResponse.builder()
+                .needActive(Boolean.TRUE)
+                .userId(user.getUserId())
+                .build();
     }
 
     /**
@@ -148,21 +155,19 @@ public class AuthifySecurityService {
      * if no userId, then throw ex
      * if no code pair, then throw ex
      * if not match code, then throw ex
-     * @param request contain cookie active user id
+     * @param userId String user id
      * @param activeCode String code
      * @return OK if success
      */
-    public String activeUser(HttpServletRequest request, String activeCode) {
+    public String activeUser(String userId, String activeCode) {
 
-        // get userId
-        String userId = SecurityUtils.getCookieValue(request, SecurityUtils.COOKIE_NEED_ACTIVE_ID);
         if (Objects.isNull(userId)) {
             throw new BadException(ErrorCode.ATF_AUTH_MISSING_KEY);
         }
         // get active code
         ActiveCode activeCodePair = serviceActiveCodeRepository
-                .findByUserIdAndType(userId, ActiveCodeType.ACTIVE_ACCOUNT).orElseThrow(
-                        () -> new BadException(ErrorCode.ATF_AUTH_MISSING_KEY)
+                .findByUserIdAndTypeAndCode(userId, ActiveCodeType.ACTIVE_ACCOUNT, activeCode).orElseThrow(
+                        () -> new BadException(ErrorCode.ATF_AUTH_CODE_NO_MATCH)
                 );
         // check expired
         if (activeCodePair.getExpiredDate().before(new Date())) {
@@ -191,7 +196,7 @@ public class AuthifySecurityService {
      * @param request {@link AuthifyNMAuthRequest}
      * @return OK if success
      */
-    public String normalLogin(AuthifyNMAuthRequest request, HttpServletResponse response) throws Exception {
+    public AuthifyTokenResponse normalLogin(AuthifyNMAuthRequest request) throws Exception {
         // get pool from header
         UserPool userPool = handleGetUserPool();
         List<String> authFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
@@ -217,10 +222,8 @@ public class AuthifySecurityService {
         // sign
         String accessToken = authifyJwtService.generateAccessToken(user, accessKey, accessExpired);
         String refreshToken = authifyJwtService.generateRefreshToken(user, refreshKey, refreshExpired);
-        // set cookie refresh token
-        response.addCookie(getSecuredCookie(SecurityUtils.COOKIE_REFRESH_TOKEN, refreshToken, refreshExpired * 24 * 3600));
 
-        return accessToken;
+        return new AuthifyTokenResponse(accessToken, refreshToken);
     }
 
     /**
@@ -228,8 +231,8 @@ public class AuthifySecurityService {
      * If one valid then refresh both key and set new header
      * @return OK if at last one key valid
      */
-    public String validate() throws Exception {
-        onValidateFailThrow();
+    public String validate(String token) throws Exception {
+        onValidateFailThrow(token);
 
         return "OK";
     }
@@ -237,18 +240,16 @@ public class AuthifySecurityService {
     /**
      * Check valid refresh token.
      * Sign new refresh and access token
-     * return new access token and attach refresh token to http-only cookie
+     * return new access token and refresh token
      * otherwise throw ex
-     * @param servletRequest {@link HttpServletRequest}
-     * @param servletResponse {@link HttpServletResponse}
+     * @param refreshToken String Token
      * @return new access token
      * @throws Exception BadException
      */
-    public String refresh(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws Exception {
+    public AuthifyTokenResponse refresh(String refreshToken) throws Exception {
 
         UserPool userPool = handleGetUserPool();
         String refreshKey = aesgcmUtils.decrypt(userPool.getPrivateRefreshKey());
-        String refreshToken = SecurityUtils.getCookieValue(servletRequest, SecurityUtils.COOKIE_REFRESH_TOKEN);
         if (Objects.isNull(refreshToken)) {
             throw new BadException(ErrorCode.ATF_AUTH_NO_AUTHORIZATION_HEADER);
         }
@@ -278,13 +279,13 @@ public class AuthifySecurityService {
         Integer refreshExpired = userPool.getRefreshExpiredDays();
         String newAccessToken = authifyJwtService.generateAccessToken(user, accessKey, accessExpired);
         String newRefreshToken = authifyJwtService.generateRefreshToken(user, refreshKey, refreshExpired *  24 * 60);
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_REFRESH_TOKEN, newRefreshToken, refreshExpired *  24 * 3600));
-        return newAccessToken;
+
+        return new AuthifyTokenResponse(newAccessToken, newRefreshToken);
     }
 
-    public String changePassword(String newPassword, String oldPassword) throws Exception {
+    public String changePassword(String token, String newPassword, String oldPassword) throws Exception {
         // extract user from jwt
-        User user = onValidateFailThrow();
+        User user = onValidateFailThrow(token);
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new BadException(ErrorCode.ATF_AUTH_WRONG_PASSWORD);
         }
@@ -301,10 +302,9 @@ public class AuthifySecurityService {
      * Create new code and save
      * send mail to registered email
      * @param username {@link String}
-     * @param servletResponse {@link HttpServletResponse}
      * @return OK if success
      */
-    public String resetPasswordStep1(String username, HttpServletResponse servletResponse) throws Exception {
+    public NeedCodeValidateResponse resetPasswordStep1(String username) throws Exception {
 
         // Set need reset password id cookie.
         UserPool userPool = handleGetUserPool();
@@ -317,7 +317,6 @@ public class AuthifySecurityService {
                 ).orElseThrow(
                         () -> new BadException(ErrorCode.ATF_AUTH_WRONG_USERNAME)
                 );
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_NEED_RESET_ID, user.getUserId(), 10 * 60)); // 10 minutes
         // Clear all reset code by user's ID
         serviceActiveCodeRepository.deleteAllByUserIdAndType(user.getUserId(), ActiveCodeType.RESET_ACCOUNT);
         // Create new code and save
@@ -332,7 +331,10 @@ public class AuthifySecurityService {
         // send mail to registered email
         emailService.sendValidationCode(user.getEmail(), activeCode);
 
-        return "OK";
+        return NeedCodeValidateResponse.builder()
+                .needReset(Boolean.TRUE)
+                .userId(user.getUserId())
+                .build();
     }
 
     /**
@@ -340,14 +342,11 @@ public class AuthifySecurityService {
      * Get code and check is code still valid
      * Attach code id to cookie (10 min) and mask as OK
      * @param code {@link String}
-     * @param servletRequest {@link HttpServletRequest}
-     * @param servletResponse {@link HttpServletResponse}
-     * @return OK
+     * @return userID, codeID
      */
-    public String resetPasswordStep2(String code, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    public NeedCodeValidateResponse resetPasswordStep2(String code, String userId) {
 
         // get user ID
-        String userId = SecurityUtils.getCookieValue(servletRequest, SecurityUtils.COOKIE_NEED_RESET_ID);
         if (Objects.isNull(userId)) {
             throw new BadException(ErrorCode.ATF_AUTH_USERNAME_MISSING);
         }
@@ -356,21 +355,20 @@ public class AuthifySecurityService {
         );
         // Get code and check is code still valid
         ActiveCode activeCode = serviceActiveCodeRepository
-                .findByUserIdAndType(user.getUserId(), ActiveCodeType.RESET_ACCOUNT)
+                .findByUserIdAndTypeAndCode(user.getUserId(), ActiveCodeType.RESET_ACCOUNT, code)
                 .orElseThrow(
-                        () ->  new BadException(ErrorCode.ATF_AUTH_MISSING_KEY)
+                        () ->  new BadException(ErrorCode.ATF_AUTH_CODE_NO_MATCH)
                 );
 
-        if (!activeCode.getCode().equals(code)) {
-            throw new BadException(ErrorCode.ATF_AUTH_CODE_NO_MATCH);
-        }
         if (activeCode.getExpiredDate().before(new Date())) {
             throw new BadException(ErrorCode.ATF_AUTH_EXPIRED_CODE);
         }
         // Attach code id to cookie (10 min)
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_RESET_CODE_ID, activeCode.getCodeId(), 10 * 60));
 
-        return "OK";
+        return NeedCodeValidateResponse.builder()
+                .userId(user.getUserId())
+                .codeId(activeCode.getCodeId())
+                .build();
     }
 
     /**
@@ -378,34 +376,27 @@ public class AuthifySecurityService {
      * Set new Password, if Active code is existed
      * Remove cookie
      * @param newPassword {@link String}
-     * @param servletRequest {@link HttpServletRequest}
-     * @param servletResponse {@link HttpServletResponse}
      * @return OK
      */
     @Transactional
-    public String resetPasswordStep3(String newPassword, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    public String resetPasswordStep3(String newPassword, String userId, String codeId) {
         // Get User and Active code from cookie.
-        String userId = SecurityUtils.getCookieValue(servletRequest, SecurityUtils.COOKIE_NEED_RESET_ID);
         if (Objects.isNull(userId)) {
             throw new BadException(ErrorCode.ATF_AUTH_USERNAME_MISSING);
         }
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new BadException(ErrorCode.ATF_AUTH_WRONG_USERNAME)
         );
-        String resetCodeId = SecurityUtils.getCookieValue(servletRequest, SecurityUtils.COOKIE_RESET_CODE_ID);
-        if (Objects.isNull(resetCodeId)) {
+        if (Objects.isNull(codeId)) {
             throw new BadException(ErrorCode.ATF_AUTH_CODE_NO_MATCH);
         }
-        ActiveCode activeCode = serviceActiveCodeRepository.findById(resetCodeId).orElseThrow(
+        ActiveCode activeCode = serviceActiveCodeRepository.findById(codeId).orElseThrow(
                 () -> new BadException(ErrorCode.ATF_AUTH_CODE_NO_MATCH)
         );
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         serviceActiveCodeRepository.delete(activeCode);
-        // Remove cookie
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_NEED_RESET_ID, Strings.EMPTY, 0));
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_RESET_CODE_ID, Strings.EMPTY, 0));
 
         return "OK";
     }
@@ -415,15 +406,12 @@ public class AuthifySecurityService {
      * Delete all last code.
      * Create new code.
      * Resend email.
-     * Attach to cookie: need-reset-id, reset-code-id
-     * @param servletRequest {@link HttpServletRequest}
-     * @param servletResponse {@link HttpServletResponse}
+     * @param userId {@link String}
      * @return OK
      */
-    public String resendResetCode(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws Exception {
+    public NeedCodeValidateResponse resendResetCode(String userId) throws Exception {
 
         UserPool userPool = handleGetUserPool();
-        String userId = SecurityUtils.getCookieValue(servletRequest, SecurityUtils.COOKIE_NEED_RESET_ID);
         if (Objects.isNull(userId)) {
             throw new BadException(ErrorCode.ATF_AUTH_USERNAME_MISSING);
         }
@@ -440,10 +428,69 @@ public class AuthifySecurityService {
                         .type(ActiveCodeType.RESET_ACCOUNT)
                         .build());
         emailService.sendValidationCode(user.getEmail(), activeCode);
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_NEED_RESET_ID, user.getUserId(), 10 * 60)); // 10 mins
-        servletResponse.addCookie(getSecuredCookie(SecurityUtils.COOKIE_RESET_CODE_ID, Strings.EMPTY, 0));
 
-        return "OK";
+        return NeedCodeValidateResponse.builder()
+                .needReset(Boolean.TRUE)
+                .userId(user.getUserId())
+                .build();
+    }
+
+    public UserDTO getUserInfo(String accessToken) throws Exception {
+
+        User user = onValidateFailThrow(accessToken);
+
+        return new UserDTO(user);
+    }
+
+    public UserDTO updateUser(UpdateUserRequest request) throws Exception {
+        // get user
+        UserPool userPool = handleGetUserPool();
+        AuthifyNMAuthRequest userData = request.getUserData();
+        User user = onValidateFailThrow(request.getAccessToken());
+        List<String> userFields = JsonUtils.fromJson(userPool.getUserFields());
+        userFields.remove("username");
+        userFields.remove("password");
+        for (String field : userFields) {
+            switch (field) {
+                case "email":
+                    if (!user.getEmail().equals(userData.getEmail())) {
+                        // find email in user-pool and isActive and delFlag
+                        List<User> users = userRepository.findAllByPoolIdAndEmailAndDelFlagAndIsValidated(userPool.getPoolId(), userData.getEmail(), Boolean.FALSE, Boolean.TRUE);
+                        if (users.isEmpty()) {
+                            user.setEmail(userData.getEmail());
+                        } else {
+                            throw new BadException(ErrorCode.ATF_EMAIL_EXISTED);
+                        }
+                    }
+                    break;
+                case "phoneNumber":
+                    user.setPhoneNumber(userData.getPhoneNumber());
+                    break;
+                case "telCountryCode":
+                    user.setTelCountryCode(userData.getTelCountryCode());
+                    break;
+                case "lastName":
+                    user.setLastName(userData.getLastName());
+                    break;
+                case "firstName":
+                    user.setFirstName(userData.getFirstName());
+                    break;
+                case "avatarImg":
+                    user.setAvatarImg(userData.getAvatarImg());
+                    break;
+                case "backgroundImg":
+                    user.setBackgroundImg(userData.getBackgroundImg());
+                    break;
+                case "displayName":
+                    user.setDisplayName(userData.getDisplayName());
+                    break;
+                case "gender":
+                    user.setGender(userData.getGender());
+                    break;
+            }
+        }
+        userRepository.save(user);
+        return new UserDTO(user);
     }
 
 //    ==============================================================================================
@@ -594,12 +641,11 @@ public class AuthifySecurityService {
      * @return User if jwt is valid
      * @throws Exception BadException
      */
-    private User onValidateFailThrow() throws Exception {
+    private User onValidateFailThrow(String token) throws Exception {
 
         UserPool userPool = handleGetUserPool();
-        String accessKey = aesgcmUtils.encrypt(userPool.getPrivateAccessKey());
+        String accessKey = aesgcmUtils.decrypt(userPool.getPrivateAccessKey());
         // get authorization header
-        String token = SecurityUtils.getAuthorizationHeader();
         if (Objects.isNull(token)) {
             throw new BadException(ErrorCode.ATF_AUTH_NO_AUTHORIZATION_HEADER);
         }

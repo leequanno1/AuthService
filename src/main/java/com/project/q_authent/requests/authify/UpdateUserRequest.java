@@ -7,9 +7,9 @@ import lombok.Setter;
 @Data
 @Getter
 @Setter
-public class AuthifyActiveUserRequest {
+public class UpdateUserRequest {
 
-    private String userId;
+    private String accessToken;
 
-    private String activeCode;
+    private AuthifyNMAuthRequest userData;
 }
