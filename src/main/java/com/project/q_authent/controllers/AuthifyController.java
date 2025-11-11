@@ -10,6 +10,8 @@ import com.project.q_authent.services.authify_services.AuthifySecurityService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
+
 @RestController
 @RequestMapping("/api/authify")
 @AllArgsConstructor
@@ -36,7 +38,7 @@ public class AuthifyController {
     @PostMapping("/resend-code")
     public JsonResponse<NeedCodeValidateResponse> resendCode(@RequestBody NeedCodeValidationRequest request) throws Exception {
 
-        if (request.getNeedActive()) {
+        if (!Objects.isNull(request.getNeedActive()) && request.getNeedActive()) {
             // is resend active code
             return JsonResponse.success(authifySecurityService.resendActiveCode(request.getUserId()));
         } else {

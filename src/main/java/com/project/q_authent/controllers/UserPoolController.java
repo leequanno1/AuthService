@@ -130,4 +130,16 @@ public class UserPoolController {
 
         return JsonResponse.success(userPoolService.getUserFields(poolId));
     }
+
+    @PostMapping("/reset-pool-key/{pool-id}")
+    public JsonResponse<String> resetPoolKey(@PathVariable("pool-id") String poolId) throws Exception {
+
+        return JsonResponse.success(userPoolService.resetPoolKey(poolId));
+    }
+
+    @PostMapping("/users/delete-many/{pool-id}")
+    public JsonResponse<String> deleteUsers(@RequestBody List<String> userIds, @PathVariable("pool-id") String poolId) {
+
+        return JsonResponse.success(userPoolService.deleteUsers(poolId, userIds));
+    }
 }

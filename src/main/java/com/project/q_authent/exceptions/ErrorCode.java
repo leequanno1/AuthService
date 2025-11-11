@@ -49,7 +49,7 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(3000, "Policy is not found", HttpStatus.NOT_FOUND),
 
     // Code 4*** : Authify Service
-    POOL_KEY_MISSING(4000, "Pool key is missing", HttpStatus.UNAUTHORIZED),
+    POOL_KEY_MISSING(4000, "Pool key is missing", HttpStatus.BAD_REQUEST),
 
     POOL_KEY_INVALID(4001, "Pool key is invalid", HttpStatus.BAD_REQUEST),
 
@@ -83,7 +83,7 @@ public enum ErrorCode {
 
     ATF_AUTH_MISSING_KEY(4015, "Missing key", HttpStatus.BAD_REQUEST),
 
-    ATF_AUTH_CODE_NO_MATCH(4016, "Code no match", HttpStatus.UNAUTHORIZED),
+    ATF_AUTH_CODE_NO_MATCH(4016, "Code no match", HttpStatus.BAD_REQUEST),
 
     ATF_AUTH_EMAIL_MISSING(4017, "Missing email", HttpStatus.BAD_REQUEST),
 

@@ -327,4 +327,66 @@ public class UserPoolService {
 
         return userFiles;
     }
+
+    /**
+     *
+     * @param poolId User pool Id
+     * @return new pool-key value
+     */
+    public String resetPoolKey(String poolId) throws Exception {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account crAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        // not root account
+        if (!Objects.isNull(crAccount.getRootId())) {
+            // get policy to check authority
+            UserPoolPolicy poolPolicy = userPoolPolicyRepository
+                    .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(crAccount.getAccountId(), poolId, Boolean.FALSE)
+                    .orElse(null);
+            if (Objects.isNull(poolPolicy) || !poolPolicy.getCanManage()) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        UserPool userPool = userPoolRepository.findById(poolId).orElseThrow(
+                () -> new BadException(ErrorCode.USER_NOT_FOUND)
+        );
+        String newPoolKey = RandomKeyGenerator.generateKeyBase64(128);
+        userPool.setPoolKey(newPoolKey);
+        userPoolRepository.save(userPool);
+        return aesgcmUtils.encrypt(newPoolKey);
+    }
+
+    public String deleteUsers(String poolId, List<String> userIds) {
+
+        String accountId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
+        Account crAccount = accountRepository.findById(accountId).orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
+
+        // not root account
+        if (!Objects.isNull(crAccount.getRootId())) {
+            // get policy to check authority
+            UserPoolPolicy poolPolicy = userPoolPolicyRepository
+                    .findByAccount_AccountIdAndUserPool_PoolIdAndDelFlag(crAccount.getAccountId(), poolId, Boolean.FALSE)
+                    .orElse(null);
+            if (Objects.isNull(poolPolicy) || !poolPolicy.getCanManage()) {
+                throw new BadException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        List<User> users = userRepository.findAllById(userIds);
+        User tempUser;
+        for (int i = 0; i < users.size(); i++) {
+            tempUser = users.get(i);
+            if (!tempUser.getPoolId().equals(poolId)) {
+                users.remove(i);
+                i--;
+            } else {
+                tempUser.setDelFlag(true);
+            }
+        }
+        userRepository.saveAll(users);
+
+        return "OK";
+    }
 }
