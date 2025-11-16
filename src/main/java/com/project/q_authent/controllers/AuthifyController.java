@@ -94,4 +94,44 @@ public class AuthifyController {
     public JsonResponse<UserDTO> updateUser(@RequestBody UpdateUserRequest request) throws Exception {
         return JsonResponse.success(authifySecurityService.updateUser(request));
     }
+
+    @PostMapping("/ss-login")
+    public JsonResponse<String> sessionLogin(@RequestBody AuthifyNMAuthRequest request) throws Exception {
+        return JsonResponse.success(authifySecurityService.sessionLogin(request));
+    }
+
+    @PostMapping("/ss-change-pass")
+    public JsonResponse<String> sessionChangePassword(@RequestBody ChangePasswordRequest request) {
+        return JsonResponse.success(authifySecurityService.sessionChangePassword(request.getSessionId(), request.getNewPassword(), request.getOldPassword()));
+    }
+
+    @PostMapping("/ss-user-info")
+    public JsonResponse<UserDTO> sessionGetUserInfo(@RequestBody String sessionID) {
+        return JsonResponse.success(authifySecurityService.sessionGetUserInfo(sessionID));
+    }
+
+    @PostMapping("/ss-verify")
+    public JsonResponse<String> sessionVerify(@RequestBody String sessionID) {
+        return JsonResponse.success(authifySecurityService.sessionVerify(sessionID));
+    }
+
+    @PostMapping("/ss-logout")
+    public JsonResponse<String> sessionLogout(@RequestBody String sessionID) {
+        return JsonResponse.success(authifySecurityService.sessionLogout(sessionID));
+    }
+
+    @PostMapping("/ss-update-user")
+    public JsonResponse<UserDTO> sessionUpdateUser(@RequestBody UpdateUserRequest request) throws Exception {
+        return JsonResponse.success(authifySecurityService.sessionUpdateUser(request));
+    }
+
+    @PostMapping("/oauth2-get-tokens")
+    public JsonResponse<AuthifyTokenResponse> oauth2GetTokens(@RequestBody UserDTO request) throws Exception {
+        return JsonResponse.success(authifySecurityService.oauth2GetTokens(request));
+    }
+
+    @PostMapping("/oauth2-get-session")
+    public JsonResponse<String> oauth2GetSession(@RequestBody UserDTO request) throws Exception {
+        return JsonResponse.success(authifySecurityService.oauth2GetSession(request));
+    }
 }

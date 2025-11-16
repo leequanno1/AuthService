@@ -11,5 +11,7 @@ public class UpdateUserRequest {
 
     private String accessToken;
 
+    private String sessionId;
+
     private AuthifyNMAuthRequest userData;
 }

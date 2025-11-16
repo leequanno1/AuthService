@@ -18,6 +18,8 @@ public enum TableIdHeader {
     POOL_POLICY_HEADER("PPC"),
     USER_HEADER("USR"),
     VALIDATION_CODE_HEADER("VLC"),
+    SESSION_ID("SID"),
+    POOL_MAIL_CONFIG("PMC"),
     ;
 
 

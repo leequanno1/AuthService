@@ -119,7 +119,7 @@ public class AccountService {
                 .build();
         validationCodeRepository.save(validationCode);
         // send code to email
-        emailService.sendValidationCode(account.getEmail(), validationCode.getCodeValue());
+        emailService.sendValidationCode(account.getEmail(), "Login", validationCode.getCodeValue().toString());
         // return account id
         return account.getAccountId();
     }

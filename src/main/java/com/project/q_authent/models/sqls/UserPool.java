@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Entity
 @Table(name = "user_pools", indexes = {
@@ -76,4 +77,7 @@ public class UserPool {
 
     @Column(name = "refresh_expired_days")
     private Integer refreshExpiredDays = 7;
+
+    @OneToMany(mappedBy = "userPool", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PoolMailConfig> mailConfigs;
 }

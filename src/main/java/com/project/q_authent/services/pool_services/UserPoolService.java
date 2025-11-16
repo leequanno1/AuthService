@@ -2,19 +2,22 @@ package com.project.q_authent.services.pool_services;
 
 import com.project.q_authent.constances.AuthField;
 import com.project.q_authent.constances.TableIdHeader;
+import com.project.q_authent.dtos.PoolMailConfigDTO;
 import com.project.q_authent.dtos.UserPoolDTOFull;
 import com.project.q_authent.dtos.authify.UserDTO;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
 import com.project.q_authent.models.nosqls.User;
 import com.project.q_authent.models.sqls.Account;
+import com.project.q_authent.models.sqls.PoolMailConfig;
 import com.project.q_authent.models.sqls.UserPool;
 import com.project.q_authent.models.sqls.UserPoolPolicy;
-import com.project.q_authent.repositories.AccountRepository;
-import com.project.q_authent.repositories.UserPoolPolicyRepository;
-import com.project.q_authent.repositories.UserPoolRepository;
-import com.project.q_authent.repositories.UserRepository;
+import com.project.q_authent.repositories.*;
+import com.project.q_authent.requests.userpools.MailConfigRequest;
 import com.project.q_authent.requests.userpools.UserPoolRequest;
+import com.project.q_authent.services.monitoring_service.LogRecords;
+import com.project.q_authent.services.monitoring_service.LogTypeConstant;
+import com.project.q_authent.services.monitoring_service.RequestLogService;
 import com.project.q_authent.utils.AESGCMUtils;
 import com.project.q_authent.utils.IDUtil;
 import com.project.q_authent.utils.JsonUtils;
@@ -46,6 +49,8 @@ public class UserPoolService {
     private final UserPoolPolicyRepository userPoolPolicyRepository;
     private final UserRepository userRepository;
     private final AESGCMUtils aesgcmUtils;
+    private final PoolMailConfigRepository poolMailConfigRepository;
+    private final RequestLogService requestLogService;
 
     /**
      * Create new user pool
@@ -54,6 +59,7 @@ public class UserPoolService {
      * @throws Exception key encode error
      * @since 1.00
      */
+    @Transactional
     public String createNewUserPool(UserPoolRequest request) throws Exception {
         String userId = Objects.requireNonNull(SecurityUtils.getCurrentUserId());
         Account account = accountRepository.findById(userId).orElseThrow(
@@ -80,6 +86,12 @@ public class UserPoolService {
                 .accessExpiredMinutes(request.getAccessExpiredMinutes())
                 .refreshExpiredDays(request.getRefreshExpiredDays())
                 .build();
+        String newMailConfigID = IDUtil.getID(TableIdHeader.POOL_MAIL_CONFIG);
+        PoolMailConfig poolMailConfig = PoolMailConfig.builder()
+                .mailConfigId(newMailConfigID)
+                .siteName(request.getPoolName())
+                .userPool(userPool)
+                .build();
 
         if (request.getEmailVerify() && !userPool.getUserFields().contains("email")) {
             throw new BadException(ErrorCode.FIELD_NEEDED);
@@ -88,6 +100,8 @@ public class UserPoolService {
         }
 
         userPoolRepository.save(userPool);
+        poolMailConfigRepository.save(poolMailConfig);
+
         return newPoolID;
     }
 
@@ -388,5 +402,58 @@ public class UserPoolService {
         userRepository.saveAll(users);
 
         return "OK";
+    }
+
+    public LogRecords getLoginLog(String poolId, Long timeFrom, Long timeTo) {
+        return requestLogService.getRequestHistogram(LogTypeConstant.LOGIN, poolId, timeFrom, timeTo);
+    }
+
+    public LogRecords getLoginFailLog(String poolId, Long timeFrom, Long timeTo) {
+        return requestLogService.getRequestHistogram(LogTypeConstant.LOGIN_FAIL, poolId, timeFrom, timeTo);
+    }
+
+    public LogRecords getSignupLog(String poolId, Long timeFrom, Long timeTo) {
+        return requestLogService.getRequestHistogram(LogTypeConstant.SIGNUP, poolId, timeFrom, timeTo);
+    }
+
+    public LogRecords getSignupFailLog(String poolId, Long timeFrom, Long timeTo) {
+        return requestLogService.getRequestHistogram(LogTypeConstant.SIGNUP_FAIL, poolId, timeFrom, timeTo);
+    }
+
+    public LogRecords getVerifyLog(String poolId, Long timeFrom, Long timeTo) {
+        return requestLogService.getRequestHistogram(LogTypeConstant.VERIFY, poolId, timeFrom, timeTo);
+    }
+
+    public LogRecords getVerifyFailLog(String poolId, Long timeFrom, Long timeTo) {
+        return requestLogService.getRequestHistogram(LogTypeConstant.VERIFY_FAIL, poolId, timeFrom, timeTo);
+    }
+
+    public String updateMailConfig(MailConfigRequest request) {
+
+        PoolMailConfig config = noExistCreatePoolMailConfig(request.getPoolId());
+        config.setSiteName(request.getSiteName());
+        config.setSiteUrl(request.getSiteUrl());
+        config.setSupportEmail(request.getSupportEmail());
+        poolMailConfigRepository.save(config);
+        return "OK";
+    }
+
+    private PoolMailConfig noExistCreatePoolMailConfig(String poolId) {
+        UserPool userPool = userPoolRepository.findById(poolId).orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
+        if (userPool.getMailConfigs().isEmpty()) {
+            // create new and save
+            PoolMailConfig poolMailConfig = PoolMailConfig.builder()
+                    .mailConfigId(IDUtil.getID(TableIdHeader.POOL_MAIL_CONFIG))
+                    .siteName(userPool.getPoolName())
+                    .build();
+            poolMailConfigRepository.save(poolMailConfig);
+            return poolMailConfig;
+        }
+
+        return userPool.getMailConfigs().get(0);
+    }
+
+    public PoolMailConfigDTO getMailConfig(String poolId) {
+        return new PoolMailConfigDTO(noExistCreatePoolMailConfig(poolId));
     }
 }

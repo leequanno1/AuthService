@@ -89,6 +89,8 @@ public enum ErrorCode {
 
     ATF_AUTH_EXPIRED_CODE(4018, "Expired code", HttpStatus.BAD_REQUEST),
 
+    ATF_INVALID_SESSION_ID(4019, "Expired code", HttpStatus.UNAUTHORIZED),
+
     ;
 
     private final int code;

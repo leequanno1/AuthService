@@ -3,6 +3,7 @@ package com.project.q_authent.dtos.authify;
 import com.project.q_authent.models.nosqls.User;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
@@ -10,6 +11,7 @@ import java.util.Date;
 @Getter
 @Setter
 @Data
+@NoArgsConstructor
 public class UserDTO {
 
     private String userId;
@@ -60,4 +62,20 @@ public class UserDTO {
         this.isValidated = user.getIsValidated();
     }
 
+    public static User toUser(UserDTO user) {
+        return User.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .telCountryCode(user.getTelCountryCode())
+                .lastName(user.getLastName())
+                .firstName(user.getFirstName())
+                .avatarImg(user.getAvatarImg())
+                .backgroundImg(user.getBackgroundImg())
+                .displayName(user.getDisplayName())
+                .gender(user.getGender())
+                .isValidated(Boolean.TRUE)
+                .build();
+    }
 }

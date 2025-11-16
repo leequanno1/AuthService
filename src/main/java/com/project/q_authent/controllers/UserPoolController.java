@@ -1,10 +1,14 @@
 package com.project.q_authent.controllers;
 
+import com.project.q_authent.dtos.PoolMailConfigDTO;
 import com.project.q_authent.dtos.UserPoolDTOFull;
 import com.project.q_authent.dtos.authify.UserDTO;
+import com.project.q_authent.models.sqls.PoolMailConfig;
+import com.project.q_authent.requests.userpools.MailConfigRequest;
 import com.project.q_authent.requests.userpools.UserPoolRequest;
 import com.project.q_authent.responses.JsonResponse;
 import com.project.q_authent.constances.AuthField;
+import com.project.q_authent.services.monitoring_service.LogRecords;
 import com.project.q_authent.services.pool_services.UserPoolService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -141,5 +145,53 @@ public class UserPoolController {
     public JsonResponse<String> deleteUsers(@RequestBody List<String> userIds, @PathVariable("pool-id") String poolId) {
 
         return JsonResponse.success(userPoolService.deleteUsers(poolId, userIds));
+    }
+
+    @GetMapping("/login-log/{pool-id}/{time-from}/{time-to}")
+    public JsonResponse<LogRecords> getLoginLog(@PathVariable("pool-id") String poolId, @PathVariable("time-from") Long timeFrom, @PathVariable("time-to") Long timeTo) throws Exception {
+
+        return JsonResponse.success(userPoolService.getLoginLog(poolId, timeFrom, timeTo));
+    }
+
+    @GetMapping("/login-fail-log/{pool-id}/{time-from}/{time-to}")
+    public JsonResponse<LogRecords> getLoginFailLog(@PathVariable("pool-id") String poolId, @PathVariable("time-from") Long timeFrom, @PathVariable("time-to") Long timeTo) throws Exception {
+
+        return JsonResponse.success(userPoolService.getLoginFailLog(poolId, timeFrom, timeTo));
+    }
+
+    @GetMapping("/signup-log/{pool-id}/{time-from}/{time-to}")
+    public JsonResponse<LogRecords> getSignupLog(@PathVariable("pool-id") String poolId, @PathVariable("time-from") Long timeFrom, @PathVariable("time-to") Long timeTo) throws Exception {
+
+        return JsonResponse.success(userPoolService.getSignupLog(poolId, timeFrom, timeTo));
+    }
+
+    @GetMapping("/signup-fail-log/{pool-id}/{time-from}/{time-to}")
+    public JsonResponse<LogRecords> getSignupFailLog(@PathVariable("pool-id") String poolId, @PathVariable("time-from") Long timeFrom, @PathVariable("time-to") Long timeTo) throws Exception {
+
+        return JsonResponse.success(userPoolService.getSignupFailLog(poolId, timeFrom, timeTo));
+    }
+
+    @GetMapping("/verify-log/{pool-id}/{time-from}/{time-to}")
+    public JsonResponse<LogRecords> getVerifyLog(@PathVariable("pool-id") String poolId, @PathVariable("time-from") Long timeFrom, @PathVariable("time-to") Long timeTo) throws Exception {
+
+        return JsonResponse.success(userPoolService.getVerifyLog(poolId, timeFrom, timeTo));
+    }
+
+    @GetMapping("/verify-fail-log/{pool-id}/{time-from}/{time-to}")
+    public JsonResponse<LogRecords> getVerifyFailLog(@PathVariable("pool-id") String poolId, @PathVariable("time-from") Long timeFrom, @PathVariable("time-to") Long timeTo) throws Exception {
+
+        return JsonResponse.success(userPoolService.getVerifyFailLog(poolId, timeFrom, timeTo));
+    }
+
+    @PostMapping("/update-mail-config")
+    public JsonResponse<String> updateMailConfig(@RequestBody MailConfigRequest request) throws Exception {
+
+        return JsonResponse.success(userPoolService.updateMailConfig(request));
+    }
+
+    @GetMapping("/mail-config/{pool-id}")
+    public JsonResponse<PoolMailConfigDTO> getPoolMailConfig(@PathVariable("pool-id") String poolId) throws Exception {
+
+        return JsonResponse.success(userPoolService.getMailConfig(poolId));
     }
 }

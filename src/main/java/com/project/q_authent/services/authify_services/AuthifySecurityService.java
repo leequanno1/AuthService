@@ -6,19 +6,20 @@ import com.project.q_authent.dtos.authify.UserDTO;
 import com.project.q_authent.exceptions.BadException;
 import com.project.q_authent.exceptions.ErrorCode;
 import com.project.q_authent.models.nosqls.ActiveCode;
+import com.project.q_authent.models.nosqls.SessionToken;
 import com.project.q_authent.models.nosqls.User;
+import com.project.q_authent.models.sqls.PoolMailConfig;
 import com.project.q_authent.models.sqls.UserPool;
-import com.project.q_authent.repositories.ServiceActiveCodeRepository;
-import com.project.q_authent.repositories.UserPoolRepository;
-import com.project.q_authent.repositories.UserRepository;
+import com.project.q_authent.repositories.*;
 import com.project.q_authent.requests.authify.AuthifyNMAuthRequest;
 import com.project.q_authent.requests.authify.UpdateUserRequest;
 import com.project.q_authent.responses.authify.AuthifyTokenResponse;
 import com.project.q_authent.responses.authify.NeedCodeValidateResponse;
+import com.project.q_authent.services.monitoring_service.LogTypeConstant;
+import com.project.q_authent.services.monitoring_service.RequestLogService;
 import com.project.q_authent.services.notificaton_service.EmailService;
 import com.project.q_authent.utils.*;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.Cookie;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,9 @@ public class AuthifySecurityService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final ServiceActiveCodeRepository serviceActiveCodeRepository;
+    private final SessionTokenRepository sessionTokenRepository;
+    private final PoolMailConfigRepository poolMailConfigRepository;
+    private final RequestLogService requestLogService;
 
     /**
      * Normal sign up, add secured cookie active-id to account
@@ -51,62 +55,70 @@ public class AuthifySecurityService {
     @Transactional
     public NeedCodeValidateResponse normalSignUp(AuthifyNMAuthRequest request) throws Exception {
 
-        UserPool userPool = handleGetUserPool();
-        List<String> userFields = JsonUtils.fromJson(userPool.getUserFields());
-        List<String> userAuthFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
-        Boolean needActiveAccount = Boolean.FALSE;
+        try {
+            UserPool userPool = handleGetUserPool();
+            List<String> userFields = JsonUtils.fromJson(userPool.getUserFields());
+            List<String> userAuthFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
+            Boolean needActiveAccount = Boolean.FALSE;
 
-        // check existed email in pool, username
-        invalidNMAuthRequestThrow(request, userAuthFields);
-        if(!userRepository.findAllByPoolIdAndUsernameAndDelFlagAndIsValidated(userPool.getPoolId(), request.getUsername(), Boolean.FALSE, Boolean.TRUE).isEmpty()) {
-            throw new BadException(ErrorCode.ATF_USERNAME_EXISTED);
-        }
-
-        if(!Objects.isNull(request.getEmail()) && !userRepository.findAllByPoolIdAndEmailAndDelFlagAndIsValidated(userPool.getPoolId(), request.getEmail(), Boolean.FALSE, Boolean.TRUE).isEmpty()) {
-            throw new BadException(ErrorCode.ATF_EMAIL_EXISTED);
-        }
-
-        User user = userMapper(request, userFields);
-        user.setPoolId(userPool.getPoolId());
-        // required fields checked
-        noRequiredFieldsThrow(user);
-        // if no need validate then default user is validated
-        if (Objects.isNull(userPool.getEmailVerify()) || !userPool.getEmailVerify()) {
-            user.setIsValidated(true);
-        } else {
-            // delete all resent code
-            List<ActiveCode> activeCodePairs = serviceActiveCodeRepository
-                    .findAllByUserPoolIdAndEmailAndType(userPool.getPoolId(),user.getEmail(), ActiveCodeType.ACTIVE_ACCOUNT);
-            if (!activeCodePairs.isEmpty()) {
-                serviceActiveCodeRepository.deleteAll(activeCodePairs);
+            // check existed email in pool, username
+            invalidNMAuthRequestThrow(request, userAuthFields);
+            if(!userRepository.findAllByPoolIdAndUsernameAndDelFlagAndIsValidated(userPool.getPoolId(), request.getUsername(), Boolean.FALSE, Boolean.TRUE).isEmpty()) {
+                throw new BadException(ErrorCode.ATF_USERNAME_EXISTED);
             }
-            // generate code
-            Integer validateCode = CodeGeneratorUtils.generateCode();
-            // save code pair
-            ActiveCode activeCode = ActiveCode.builder()
+
+            if(!Objects.isNull(request.getEmail()) && !userRepository.findAllByPoolIdAndEmailAndDelFlagAndIsValidated(userPool.getPoolId(), request.getEmail(), Boolean.FALSE, Boolean.TRUE).isEmpty()) {
+                throw new BadException(ErrorCode.ATF_EMAIL_EXISTED);
+            }
+
+            User user = userMapper(request, userFields);
+            user.setPoolId(userPool.getPoolId());
+            // required fields checked
+            noRequiredFieldsThrow(user);
+            // if no need validate then default user is validated
+            if (Objects.isNull(userPool.getEmailVerify()) || !userPool.getEmailVerify()) {
+                user.setIsValidated(true);
+            } else {
+                // delete all resent code
+                List<ActiveCode> activeCodePairs = serviceActiveCodeRepository
+                        .findAllByUserPoolIdAndEmailAndType(userPool.getPoolId(),user.getEmail(), ActiveCodeType.ACTIVE_ACCOUNT);
+                if (!activeCodePairs.isEmpty()) {
+                    serviceActiveCodeRepository.deleteAll(activeCodePairs);
+                }
+                // generate code
+                Integer validateCode = CodeGeneratorUtils.generateCode();
+                // save code pair
+                ActiveCode activeCode = ActiveCode.builder()
+                        .userId(user.getUserId())
+                        .code(String.valueOf(validateCode))
+                        .email(user.getEmail())
+                        .userPoolId(userPool.getPoolId())
+                        .type(ActiveCodeType.ACTIVE_ACCOUNT)
+                        .build();
+                serviceActiveCodeRepository.save(activeCode);
+                emailService.sendValidationCode(user.getEmail(), noConfigCreate(userPool),"Sign up", validateCode.toString());
+                needActiveAccount = Boolean.TRUE;
+            }
+
+            // delete all no activated
+            List<User> needDeleteUsers = userRepository.findAllByPoolIdAndUsernameAndDelFlagAndIsValidated(userPool.getPoolId(), request.getUsername(), Boolean.FALSE, Boolean.FALSE);
+            if (!needDeleteUsers.isEmpty()) {
+                userRepository.deleteAll(needDeleteUsers);
+            }
+
+            userRepository.save(user);
+            // add log
+            requestLogService.recordRequest(LogTypeConstant.SIGNUP, userPool.getPoolId());
+
+            return NeedCodeValidateResponse.builder()
+                    .needActive(needActiveAccount)
                     .userId(user.getUserId())
-                    .code(String.valueOf(validateCode))
-                    .email(user.getEmail())
-                    .userPoolId(userPool.getPoolId())
-                    .type(ActiveCodeType.ACTIVE_ACCOUNT)
                     .build();
-            serviceActiveCodeRepository.save(activeCode);
-            emailService.sendValidationCode(user.getEmail(), validateCode);
-            needActiveAccount = Boolean.TRUE;
+
+        } catch (Exception e) {
+            requestLogService.recordRequest(LogTypeConstant.SIGNUP_FAIL, handleGetUserPool().getPoolId());
+            throw e;
         }
-
-        // delete all no activated
-        List<User> needDeleteUsers = userRepository.findAllByPoolIdAndUsernameAndDelFlagAndIsValidated(userPool.getPoolId(), request.getUsername(), Boolean.FALSE, Boolean.FALSE);
-        if (!needDeleteUsers.isEmpty()) {
-            userRepository.deleteAll(needDeleteUsers);
-        }
-
-        userRepository.save(user);
-
-        return NeedCodeValidateResponse.builder()
-                .needActive(needActiveAccount)
-                .userId(user.getUserId())
-                .build();
     }
 
     /**
@@ -142,7 +154,7 @@ public class AuthifySecurityService {
                 .build();
 
         serviceActiveCodeRepository.save(activeCode);
-        emailService.sendValidationCode(user.getEmail(), codeValue);
+        emailService.sendValidationCode(user.getEmail(), noConfigCreate(handleGetUserPool()), "Sign up", codeValue.toString());
 
         return NeedCodeValidateResponse.builder()
                 .needActive(Boolean.TRUE)
@@ -197,33 +209,41 @@ public class AuthifySecurityService {
      * @return OK if success
      */
     public AuthifyTokenResponse normalLogin(AuthifyNMAuthRequest request) throws Exception {
-        // get pool from header
-        UserPool userPool = handleGetUserPool();
-        List<String> authFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
-        // check valid request
-        invalidNMAuthRequestThrow(request, authFields);
-        // get user by username
-        User user = userRepository
-                .findUserByPoolIdAndUsernameAndIsValidatedAndDelFlag(userPool.getPoolId(), request.getUsername(), Boolean.TRUE, Boolean.FALSE)
-                .orElseThrow(
-                        () -> new BadException(ErrorCode.ATF_AUTH_WRONG_USERNAME)
-                );
-        // check password match
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadException(ErrorCode.ATF_AUTH_WRONG_PASSWORD);
-        }
-        // check optional match
-        optionalNotMatchThrow(request, user, authFields);
-        // get access key, and refresh key
-        String accessKey = aesgcmUtils.decrypt(userPool.getPrivateAccessKey());
-        String refreshKey = aesgcmUtils.decrypt(userPool.getPrivateRefreshKey());
-        Integer accessExpired = userPool.getAccessExpiredMinutes();
-        Integer refreshExpired = userPool.getRefreshExpiredDays();
-        // sign
-        String accessToken = authifyJwtService.generateAccessToken(user, accessKey, accessExpired);
-        String refreshToken = authifyJwtService.generateRefreshToken(user, refreshKey, refreshExpired);
+        try {
+            // get pool from header
+            UserPool userPool = handleGetUserPool();
+            List<String> authFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
+            // check valid request
+            invalidNMAuthRequestThrow(request, authFields);
+            // get user by username
+            User user = userRepository
+                    .findUserByPoolIdAndUsernameAndIsValidatedAndDelFlag(userPool.getPoolId(), request.getUsername(), Boolean.TRUE, Boolean.FALSE)
+                    .orElseThrow(
+                            () -> new BadException(ErrorCode.ATF_AUTH_WRONG_USERNAME)
+                    );
+            // check password match
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new BadException(ErrorCode.ATF_AUTH_WRONG_PASSWORD);
+            }
+            // check optional match
+            optionalNotMatchThrow(request, user, authFields);
+            // get access key, and refresh key
+            String accessKey = aesgcmUtils.decrypt(userPool.getPrivateAccessKey());
+            String refreshKey = aesgcmUtils.decrypt(userPool.getPrivateRefreshKey());
+            Integer accessExpired = userPool.getAccessExpiredMinutes();
+            Integer refreshExpired = userPool.getRefreshExpiredDays();
+            // sign
+            String accessToken = authifyJwtService.generateAccessToken(user, accessKey, accessExpired);
+            String refreshToken = authifyJwtService.generateRefreshToken(user, refreshKey, refreshExpired);
+            //log
+            requestLogService.recordRequest(LogTypeConstant.LOGIN, userPool.getPoolId());
 
-        return new AuthifyTokenResponse(accessToken, refreshToken);
+            return new AuthifyTokenResponse(accessToken, refreshToken);
+        } catch (Exception e) {
+            requestLogService.recordRequest(LogTypeConstant.LOGIN_FAIL, handleGetUserPool().getPoolId());
+
+            throw e;
+        }
     }
 
     /**
@@ -232,7 +252,14 @@ public class AuthifySecurityService {
      * @return OK if at last one key valid
      */
     public String validate(String token) throws Exception {
-        onValidateFailThrow(token);
+
+        try {
+            onValidateFailThrow(token);
+            requestLogService.recordRequest(LogTypeConstant.VERIFY, handleGetUserPool().getPoolId());
+        } catch (Exception e) {
+            requestLogService.recordRequest(LogTypeConstant.VERIFY_FAIL, handleGetUserPool().getPoolId());
+            throw e;
+        }
 
         return "OK";
     }
@@ -329,7 +356,7 @@ public class AuthifySecurityService {
                         .type(ActiveCodeType.RESET_ACCOUNT)
                         .build());
         // send mail to registered email
-        emailService.sendValidationCode(user.getEmail(), activeCode);
+        emailService.sendValidationCode(user.getEmail(), noConfigCreate(userPool), "Reset password", activeCode.toString());
 
         return NeedCodeValidateResponse.builder()
                 .needReset(Boolean.TRUE)
@@ -427,7 +454,7 @@ public class AuthifySecurityService {
                         .code(String.valueOf(activeCode))
                         .type(ActiveCodeType.RESET_ACCOUNT)
                         .build());
-        emailService.sendValidationCode(user.getEmail(), activeCode);
+        emailService.sendValidationCode(user.getEmail(),noConfigCreate(userPool), "Reset password", activeCode.toString());
 
         return NeedCodeValidateResponse.builder()
                 .needReset(Boolean.TRUE)
@@ -491,6 +518,212 @@ public class AuthifySecurityService {
         }
         userRepository.save(user);
         return new UserDTO(user);
+    }
+
+    /**
+     * Sign and set header authorization and refresh header
+     * Required 2 fields: username, password
+     * @param request {@link AuthifyNMAuthRequest}
+     * @return Session ID
+     */
+    public String sessionLogin(AuthifyNMAuthRequest request) throws Exception {
+
+        try {
+            UserPool userPool = handleGetUserPool();
+            List<String> authFields = JsonUtils.fromJson(userPool.getAuthorizeFields());
+            // check valid request
+            invalidNMAuthRequestThrow(request, authFields);
+            // get user by username
+            User user = userRepository
+                    .findUserByPoolIdAndUsernameAndIsValidatedAndDelFlag(userPool.getPoolId(), request.getUsername(), Boolean.TRUE, Boolean.FALSE)
+                    .orElseThrow(
+                            () -> new BadException(ErrorCode.ATF_AUTH_WRONG_USERNAME)
+                    );
+            // check password match
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new BadException(ErrorCode.ATF_AUTH_WRONG_PASSWORD);
+            }
+            // check optional match
+            optionalNotMatchThrow(request, user, authFields);
+
+            // generate SessionToken
+            String ssToken = IDUtil.getID(TableIdHeader.SESSION_ID);
+            sessionTokenRepository.save(SessionToken.builder()
+                    .token(ssToken)
+                    .userId(user.getUserId())
+                    .build());
+            // add log
+            requestLogService.recordRequest(LogTypeConstant.LOGIN, userPool.getPoolId());
+
+            return ssToken;
+        } catch (Exception e) {
+            requestLogService.recordRequest(LogTypeConstant.LOGIN_FAIL, handleGetUserPool().getPoolId());
+            throw e;
+        }
+    }
+
+    public String sessionChangePassword(String sessionId, String newPassword, String oldPassword) {
+
+        // get user
+        SessionToken sessionToken = sessionTokenRepository.findById(sessionId).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        User user = userRepository.findById(sessionToken.getUserId()).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new BadException(ErrorCode.ATF_AUTH_WRONG_PASSWORD);
+        }
+        // change new password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return  "OK";
+    }
+
+    public UserDTO sessionGetUserInfo(String sessionID) {
+        SessionToken sessionToken = sessionTokenRepository.findById(sessionID).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        User user = userRepository.findById(sessionToken.getUserId()).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        return new UserDTO(user);
+    }
+
+    public String sessionVerify(String sessionID) {
+        SessionToken sessionToken = sessionTokenRepository.findById(sessionID).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        userRepository.findById(sessionToken.getUserId()).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+
+        return "OK";
+    }
+
+    public String sessionLogout(String sessionID) {
+        sessionTokenRepository.deleteById(sessionID);
+        return "OK";
+    }
+
+    public UserDTO sessionUpdateUser(UpdateUserRequest request) throws Exception {
+        SessionToken sessionToken = sessionTokenRepository.findById(request.getSessionId()).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        User user = userRepository.findById(sessionToken.getUserId()).orElseThrow(
+                () -> new BadException(ErrorCode.ATF_INVALID_SESSION_ID)
+        );
+        UserPool userPool = handleGetUserPool();
+        AuthifyNMAuthRequest userData = request.getUserData();
+
+        List<String> userFields = JsonUtils.fromJson(userPool.getUserFields());
+        userFields.remove("username");
+        userFields.remove("password");
+        for (String field : userFields) {
+            switch (field) {
+                case "email":
+                    if (!user.getEmail().equals(userData.getEmail())) {
+                        // find email in user-pool and isActive and delFlag
+                        List<User> users = userRepository.findAllByPoolIdAndEmailAndDelFlagAndIsValidated(userPool.getPoolId(), userData.getEmail(), Boolean.FALSE, Boolean.TRUE);
+                        if (users.isEmpty()) {
+                            user.setEmail(userData.getEmail());
+                        } else {
+                            throw new BadException(ErrorCode.ATF_EMAIL_EXISTED);
+                        }
+                    }
+                    break;
+                case "phoneNumber":
+                    user.setPhoneNumber(userData.getPhoneNumber());
+                    break;
+                case "telCountryCode":
+                    user.setTelCountryCode(userData.getTelCountryCode());
+                    break;
+                case "lastName":
+                    user.setLastName(userData.getLastName());
+                    break;
+                case "firstName":
+                    user.setFirstName(userData.getFirstName());
+                    break;
+                case "avatarImg":
+                    user.setAvatarImg(userData.getAvatarImg());
+                    break;
+                case "backgroundImg":
+                    user.setBackgroundImg(userData.getBackgroundImg());
+                    break;
+                case "displayName":
+                    user.setDisplayName(userData.getDisplayName());
+                    break;
+                case "gender":
+                    user.setGender(userData.getGender());
+                    break;
+            }
+        }
+        userRepository.save(user);
+        return new UserDTO(user);
+    }
+
+    /**
+     *
+     * @param request OAuth2Request
+     * @return AuthifyTokenResponse
+     */
+    public AuthifyTokenResponse oauth2GetTokens(UserDTO request) throws Exception {
+
+        try {
+            User user = userRepository.findById(request.getUserId()).orElse(null);
+            UserPool userPool = handleGetUserPool();
+
+            if (Objects.isNull(user) || user.getDelFlag() || !user.getIsValidated()) {
+                // add new user
+                user = UserDTO.toUser(request);
+                user.setPoolId(userPool.getPoolId());
+                userRepository.save(user);
+                user = userRepository.findById(request.getUserId()).orElse(null);
+            }
+            String accessKey = aesgcmUtils.decrypt(userPool.getPrivateAccessKey());
+            String refreshKey = aesgcmUtils.decrypt(userPool.getPrivateRefreshKey());
+            Integer accessExpired = userPool.getAccessExpiredMinutes();
+            Integer refreshExpired = userPool.getRefreshExpiredDays();
+            // sign
+            String accessToken = authifyJwtService.generateAccessToken(user, accessKey, accessExpired);
+            String refreshToken = authifyJwtService.generateRefreshToken(user, refreshKey, refreshExpired);
+            // add log
+            requestLogService.recordRequest(LogTypeConstant.LOGIN, userPool.getPoolId());
+
+            return new AuthifyTokenResponse(accessToken, refreshToken);
+        } catch (Exception e) {
+            requestLogService.recordRequest(LogTypeConstant.LOGIN_FAIL, handleGetUserPool().getPoolId());
+            throw e;
+        }
+    }
+
+    public String oauth2GetSession(UserDTO request) throws Exception {
+        try {
+            User user = userRepository.findById(request.getUserId()).orElse(null);
+            UserPool userPool = handleGetUserPool();
+
+            if (Objects.isNull(user)) {
+                // add new user
+                user = UserDTO.toUser(request);
+                user.setPoolId(userPool.getPoolId());
+                userRepository.save(user);
+            }
+
+            String ssToken = IDUtil.getID(TableIdHeader.SESSION_ID);
+            sessionTokenRepository.save(SessionToken.builder()
+                    .token(ssToken)
+                    .userId(user.getUserId())
+                    .build());
+            // add log
+            requestLogService.recordRequest(LogTypeConstant.LOGIN, userPool.getPoolId());
+
+            return ssToken;
+        } catch (Exception e) {
+            // add log
+            requestLogService.recordRequest(LogTypeConstant.LOGIN_FAIL, handleGetUserPool().getPoolId());
+            throw e;
+        }
     }
 
 //    ==============================================================================================
@@ -626,15 +859,6 @@ public class AuthifySecurityService {
         }
     }
 
-    private Cookie getSecuredCookie(String key, String value, Integer maxAge) {
-        Cookie cookie = new Cookie(key, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setMaxAge(maxAge);
-        return cookie;
-    }
-
     /**
      * Handle validate access token to check if a token is still valid.
      * Throw ex if jwt have sign problem or expired.
@@ -689,6 +913,24 @@ public class AuthifySecurityService {
                 .orElseThrow(() -> new BadException(ErrorCode.POOL_NOT_FOUND));
     }
 
+    private PoolMailConfig noConfigCreate(UserPool userPool) {
 
+        List<PoolMailConfig> poolMailConfigs = userPool.getMailConfigs();
 
+        if (Objects.isNull(poolMailConfigs) || poolMailConfigs.isEmpty()) {
+            // Create new config and return
+            String configId = IDUtil.getID(TableIdHeader.POOL_MAIL_CONFIG);
+            PoolMailConfig poolMailConfig = PoolMailConfig.builder()
+                    .userPool(userPool)
+                    .mailConfigId(configId)
+                    .siteName(userPool.getPoolName())
+                    .build();
+
+            poolMailConfigRepository.save(poolMailConfig);
+
+            return poolMailConfig;
+        }
+
+        return poolMailConfigs.get(0);
+    }
 }

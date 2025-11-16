@@ -41,7 +41,7 @@ public class SecurityService {
      * @since 1.00
      */
     public TokenResponse login(String username, String password) {
-        Account account = accountRepository.findByUsername(username)
+        Account account = accountRepository.findByUsernameAndDelFlagAndRootIdIsNull(username, Boolean.FALSE)
                 .orElseThrow(() -> new BadException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(password, account.getPassword())) {
@@ -90,7 +90,7 @@ public class SecurityService {
     @Transactional
     public String register(RegisterRequest request) {
         // check existed user
-        Account account = accountRepository.findByUsername(request.getUsername()).orElse(null);
+        Account account = accountRepository.findByUsernameAndDelFlagAndRootIdIsNull(request.getUsername(), Boolean.FALSE).orElse(null);
         if(!Objects.isNull(account)) {
             if (!Objects.isNull(account.getActive()) && account.getActive()) {
                 throw new BadException(ErrorCode.USER_EXISTED);
@@ -117,6 +117,7 @@ public class SecurityService {
                 .email(request.getEmail())
                 .displayName(request.getDisplayName())
                 .active(false)
+                .delFlag(false)
                 .build();
         accountRepository.save(account);
         return "OK";
